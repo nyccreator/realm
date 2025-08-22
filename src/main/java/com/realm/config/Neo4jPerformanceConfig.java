@@ -114,13 +114,57 @@ public class Neo4jPerformanceConfig {
      * Creates performance-optimized indexes for PKM operations.
      * These indexes are specifically designed for the query patterns
      * expected in a personal knowledge management system.
+     * 
+     * NOTE: Constraints automatically create indexes, so we avoid duplicate index creation
      */
     private void createOptimalIndexes() {
         try (var session = neo4jDriver().session()) {
             log.info("Creating performance indexes for PKM operations");
             
-            // User indexes for authentication and user lookups
-            session.run("CREATE INDEX user_email_index IF NOT EXISTS FOR (u:User) ON (u.email)");
+            // First create constraints (which automatically create unique indexes)
+            createConstraints(session);
+            
+            // Then create additional indexes that don't conflict with constraints
+            createAdditionalIndexes(session);
+            
+            log.info("Performance indexes created successfully");
+            
+        } catch (Exception e) {
+            log.error("Error creating performance indexes: {}", e.getMessage(), e);
+            // Don't throw exception to prevent application startup failure
+            log.warn("Continuing with application startup despite index creation issues");
+        }
+    }
+    
+    /**
+     * Creates constraints which automatically create unique indexes
+     */
+    private void createConstraints(org.neo4j.driver.Session session) {
+        try {
+            log.info("Creating constraints for data integrity");
+            
+            // User constraints (these create unique indexes automatically)
+            session.run("CREATE CONSTRAINT user_email_unique IF NOT EXISTS FOR (u:User) REQUIRE u.email IS UNIQUE");
+            session.run("CREATE CONSTRAINT user_id_exists IF NOT EXISTS FOR (u:User) REQUIRE u.id IS NOT NULL");
+            
+            // Note constraints
+            session.run("CREATE CONSTRAINT note_id_exists IF NOT EXISTS FOR (n:Note) REQUIRE n.id IS NOT NULL");
+            
+            log.info("Constraints created successfully");
+            
+        } catch (Exception e) {
+            log.warn("Some constraints may already exist: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * Creates additional indexes that don't conflict with constraints
+     */
+    private void createAdditionalIndexes(org.neo4j.driver.Session session) {
+        try {
+            log.info("Creating additional performance indexes");
+            
+            // User indexes (excluding email which is handled by constraint)
             session.run("CREATE INDEX user_active_index IF NOT EXISTS FOR (u:User) ON (u.isActive)");
             
             // Note indexes for content operations
@@ -144,15 +188,10 @@ public class Neo4jPerformanceConfig {
             session.run("CREATE INDEX notelink_strength_index IF NOT EXISTS FOR ()-[r:REFERENCES]-() ON (r.strength)");
             session.run("CREATE INDEX notelink_created_index IF NOT EXISTS FOR ()-[r:REFERENCES]-() ON (r.createdAt)");
             
-            // Constraints for data integrity
-            session.run("CREATE CONSTRAINT user_email_unique IF NOT EXISTS FOR (u:User) REQUIRE u.email IS UNIQUE");
-            session.run("CREATE CONSTRAINT user_id_exists IF NOT EXISTS FOR (u:User) REQUIRE u.id IS NOT NULL");
-            session.run("CREATE CONSTRAINT note_id_exists IF NOT EXISTS FOR (n:Note) REQUIRE n.id IS NOT NULL");
-            
-            log.info("Performance indexes created successfully");
+            log.info("Additional indexes created successfully");
             
         } catch (Exception e) {
-            log.error("Error creating performance indexes: {}", e.getMessage(), e);
+            log.warn("Some indexes may already exist: {}", e.getMessage());
         }
     }
     

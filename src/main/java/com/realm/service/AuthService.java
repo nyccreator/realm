@@ -4,10 +4,6 @@ import com.realm.model.User;
 import com.realm.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -42,7 +38,6 @@ public class AuthService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-    private final AuthenticationManager authenticationManager;
     
     // Validation patterns
     private static final Pattern EMAIL_PATTERN = 
@@ -53,12 +48,10 @@ public class AuthService implements UserDetailsService {
     @Autowired
     public AuthService(UserRepository userRepository,
                       PasswordEncoder passwordEncoder,
-                      JwtTokenProvider jwtTokenProvider,
-                      AuthenticationManager authenticationManager) {
+                      JwtTokenProvider jwtTokenProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
-        this.authenticationManager = authenticationManager;
     }
     
     /**
@@ -128,7 +121,7 @@ public class AuthService implements UserDetailsService {
     }
     
     /**
-     * Authenticate user and generate tokens
+     * Authenticate user and generate tokens - simplified without Spring Security AuthenticationManager
      */
     public AuthResult authenticateUser(String email, String password) {
         log.info("Attempting to authenticate user: {}", email);
@@ -141,31 +134,28 @@ public class AuthService implements UserDetailsService {
             
             String normalizedEmail = email.trim().toLowerCase();
             
-            // Authenticate with Spring Security
-            Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(normalizedEmail, password)
-            );
-            
-            // Load user details
+            // Load user and verify password manually
             User user = userRepository.findActiveUserByEmail(normalizedEmail)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                    .orElse(null);
+            
+            if (user == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
+                log.warn("Authentication failed for user: {} - Invalid credentials", email);
+                return AuthResult.failure("Invalid email or password");
+            }
             
             // Update last login timestamp
             user.updateLastLogin();
             userRepository.save(user);
             
             // Generate tokens
-            String accessToken = jwtTokenProvider.generateToken(authentication);
+            String accessToken = jwtTokenProvider.generateToken(user);
             String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
             
             log.info("User authenticated successfully: {}", email);
             return AuthResult.success("Authentication successful", accessToken, refreshToken, user);
             
-        } catch (AuthenticationException e) {
-            log.warn("Authentication failed for user {}: {}", email, e.getMessage());
-            return AuthResult.failure("Invalid email or password");
         } catch (Exception e) {
-            log.error("Error during authentication for user {}: {}", email, e.getMessage(), e);
+            log.error("Authentication error for user: {} - {}", email, e.getMessage(), e);
             return AuthResult.failure("Authentication failed due to system error");
         }
     }

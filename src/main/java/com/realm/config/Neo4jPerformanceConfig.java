@@ -3,15 +3,19 @@ package com.realm.config;
 import org.neo4j.driver.Config;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.neo4j.config.AbstractNeo4jConfig;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
+import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.data.neo4j.core.Neo4jTemplate;
+import org.springframework.data.neo4j.core.transaction.Neo4jTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import lombok.extern.slf4j.Slf4j;
 
-import jakarta.annotation.PostConstruct;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -28,9 +32,8 @@ import java.util.concurrent.TimeUnit;
  * - Relationship analysis: < 500ms for complex patterns
  */
 @Configuration
-@EnableTransactionManagement
 @Slf4j
-public class Neo4jPerformanceConfig extends AbstractNeo4jConfig {
+public class Neo4jPerformanceConfig {
     
     @Value("${spring.neo4j.uri}")
     private String uri;
@@ -41,9 +44,11 @@ public class Neo4jPerformanceConfig extends AbstractNeo4jConfig {
     @Value("${spring.neo4j.authentication.password}")
     private String password;
     
-    @Override
+    @Autowired
+    private Environment environment;
+    
     @Bean
-    public Driver driver() {
+    public Driver neo4jDriver() {
         log.info("Configuring Neo4j driver with performance optimizations for PKM workloads");
         
         Config config = Config.builder()
@@ -72,8 +77,35 @@ public class Neo4jPerformanceConfig extends AbstractNeo4jConfig {
         return driver;
     }
     
-    @PostConstruct
+    /**
+     * Neo4jClient bean for low-level database operations
+     */
+    @Bean
+    public Neo4jClient neo4jClient(Driver driver) {
+        return Neo4jClient.create(driver);
+    }
+    
+    /**
+     * Neo4jTemplate bean for programmatic database operations
+     */
+    @Bean
+    public Neo4jTemplate neo4jTemplate(Neo4jClient neo4jClient) {
+        return new Neo4jTemplate(neo4jClient);
+    }
+    
+    /**
+     * Initialize performance optimizations after application context is fully loaded
+     * This prevents circular dependency issues during startup
+     * Disabled for test profile to avoid test interference
+     */
+    @EventListener(ContextRefreshedEvent.class)
     public void initializePerformanceOptimizations() {
+        // Skip index creation in test profile to prevent test interference
+        if (environment.acceptsProfiles("test")) {
+            log.info("Skipping Neo4j performance optimizations in test profile");
+            return;
+        }
+        
         log.info("Initializing Neo4j performance optimizations for PKM system");
         createOptimalIndexes();
     }
@@ -84,7 +116,7 @@ public class Neo4jPerformanceConfig extends AbstractNeo4jConfig {
      * expected in a personal knowledge management system.
      */
     private void createOptimalIndexes() {
-        try (var session = driver().session()) {
+        try (var session = neo4jDriver().session()) {
             log.info("Creating performance indexes for PKM operations");
             
             // User indexes for authentication and user lookups
@@ -130,7 +162,7 @@ public class Neo4jPerformanceConfig extends AbstractNeo4jConfig {
      * This method can be called during startup or health checks
      */
     public void validateSchemaIntegrity() {
-        try (var session = driver().session()) {
+        try (var session = neo4jDriver().session()) {
             log.info("Validating Neo4j schema integrity for PKM system");
             
             // Verify critical indexes exist
@@ -162,11 +194,4 @@ public class Neo4jPerformanceConfig extends AbstractNeo4jConfig {
         }
     }
     
-    /**
-     * Optimized transaction configuration for PKM operations
-     */
-    @Override
-    protected java.util.Collection<String> getMappingBasePackages() {
-        return java.util.List.of("com.realm.model");
-    }
 }

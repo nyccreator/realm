@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,12 +30,20 @@ public class Neo4jHealthService {
     
     private final Neo4jPerformanceConfig neo4jConfig;
     private final UserRepository userRepository;
+    private final Environment environment;
     
     /**
      * Validates Neo4j schema integrity when the application starts
+     * Skips validation in test profile to prevent test interference
      */
     @EventListener(ApplicationReadyEvent.class)
     public void validateSchemaOnStartup() {
+        // Skip validation in test profile
+        if (environment.acceptsProfiles("test")) {
+            log.info("Skipping Neo4j schema validation in test profile");
+            return;
+        }
+        
         log.info("Starting Neo4j schema validation for Realm PKM system");
         
         try {

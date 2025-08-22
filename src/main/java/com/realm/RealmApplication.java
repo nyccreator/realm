@@ -18,7 +18,11 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * - Performance-optimized graph queries
  * - Spring Boot integration with Spring Data Neo4j
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = {
+    // Exclude Redis auto-config to prevent conflicts with Neo4j setup
+    org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.session.SessionAutoConfiguration.class
+})
 @EnableNeo4jRepositories(basePackages = "com.realm.repository")
 @EnableTransactionManagement
 public class RealmApplication {

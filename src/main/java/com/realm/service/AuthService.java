@@ -198,7 +198,7 @@ public class AuthService implements UserDetailsService {
     /**
      * Verify user account
      */
-    public AuthResult verifyUser(String userId) {
+    public AuthResult verifyUser(Long userId) {
         log.info("Attempting to verify user: {}", userId);
         
         try {
@@ -229,7 +229,7 @@ public class AuthService implements UserDetailsService {
     /**
      * Change user password
      */
-    public AuthResult changePassword(String userId, String currentPassword, String newPassword) {
+    public AuthResult changePassword(Long userId, String currentPassword, String newPassword) {
         log.info("Attempting to change password for user: {}", userId);
         
         try {
@@ -265,7 +265,7 @@ public class AuthService implements UserDetailsService {
     /**
      * Update user profile
      */
-    public AuthResult updateProfile(String userId, String displayName, String firstName, 
+    public AuthResult updateProfile(Long userId, String displayName, String firstName, 
                                    String lastName, String bio) {
         log.info("Attempting to update profile for user: {}", userId);
         
@@ -294,7 +294,7 @@ public class AuthService implements UserDetailsService {
     /**
      * Deactivate user account
      */
-    public AuthResult deactivateUser(String userId) {
+    public AuthResult deactivateUser(Long userId) {
         log.info("Attempting to deactivate user: {}", userId);
         
         try {

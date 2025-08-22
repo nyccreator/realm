@@ -60,7 +60,7 @@ public class AuthControllerTest {
     @BeforeEach
     void setUp() {
         testUser = User.builder()
-                .id("test-user-id")
+                .id(1L)
                 .email("test@example.com")
                 .displayName("Test User")
                 .isActive(true)

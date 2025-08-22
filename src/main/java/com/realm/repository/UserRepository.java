@@ -17,7 +17,7 @@ import java.util.Optional;
  * to leverage Neo4j's graph performance characteristics.
  */
 @Repository
-public interface UserRepository extends Neo4jRepository<User, String> {
+public interface UserRepository extends Neo4jRepository<User, Long> {
     
     /**
      * Find user by email (used for authentication)
@@ -36,7 +36,7 @@ public interface UserRepository extends Neo4jRepository<User, String> {
      * Update last login timestamp
      */
     @Query("MATCH (u:User {id: $userId}) SET u.lastLoginAt = $timestamp RETURN u")
-    Optional<User> updateLastLogin(@Param("userId") String userId, @Param("timestamp") LocalDateTime timestamp);
+    Optional<User> updateLastLogin(@Param("userId") Long userId, @Param("timestamp") LocalDateTime timestamp);
     
     /**
      * For single-user MVP, get the primary user
@@ -60,7 +60,7 @@ public interface UserRepository extends Neo4jRepository<User, String> {
      * Update user verification status
      */
     @Query("MATCH (u:User {id: $userId}) SET u.isVerified = $verified, u.updatedAt = $timestamp RETURN u")
-    Optional<User> updateVerificationStatus(@Param("userId") String userId, 
+    Optional<User> updateVerificationStatus(@Param("userId") Long userId, 
                                            @Param("verified") boolean verified, 
                                            @Param("timestamp") LocalDateTime timestamp);
     
@@ -68,7 +68,7 @@ public interface UserRepository extends Neo4jRepository<User, String> {
      * Update user active status
      */
     @Query("MATCH (u:User {id: $userId}) SET u.isActive = $active, u.updatedAt = $timestamp RETURN u")
-    Optional<User> updateActiveStatus(@Param("userId") String userId, 
+    Optional<User> updateActiveStatus(@Param("userId") Long userId, 
                                      @Param("active") boolean active, 
                                      @Param("timestamp") LocalDateTime timestamp);
     
@@ -76,5 +76,5 @@ public interface UserRepository extends Neo4jRepository<User, String> {
      * User statistics for dashboard
      */
     @Query("MATCH (u:User)-[:CREATED_BY]->(n:Note) WHERE u.id = $userId RETURN count(n)")
-    Long countNotesByUser(@Param("userId") String userId);
+    Long countNotesByUser(@Param("userId") Long userId);
 }

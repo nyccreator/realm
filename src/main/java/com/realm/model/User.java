@@ -32,7 +32,7 @@ public class User implements UserDetails {
     
     @Id 
     @GeneratedValue
-    private String id;
+    private Long id;
     
     @Property("email")
     @Email(message = "Please provide a valid email address")
@@ -63,9 +63,7 @@ public class User implements UserDetails {
     @Property("profilePictureUrl")
     private String profilePictureUrl;
     
-    @Property("preferences")
-    @Builder.Default
-    private Map<String, Object> preferences = new HashMap<>();
+    // Note: Preferences will be added later with JSON serialization support
     
     @Property("isActive")
     @Builder.Default
@@ -154,16 +152,15 @@ public class User implements UserDetails {
         this.updatedAt = LocalDateTime.now();
     }
     
+    // Preference methods will be implemented with JSON serialization support
     public void updatePreference(String key, Object value) {
-        if (preferences == null) {
-            preferences = new HashMap<>();
-        }
-        preferences.put(key, value);
+        // TODO: Implement with JSON preferences storage
         this.updatedAt = LocalDateTime.now();
     }
     
     public Object getPreference(String key) {
-        return preferences != null ? preferences.get(key) : null;
+        // TODO: Implement with JSON preferences storage
+        return null;
     }
     
     public String getFullName() {

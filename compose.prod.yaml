@@ -1,0 +1,187 @@
+networks:
+  realm-network:
+    driver: bridge
+
+services:
+  neo4j:
+    image: neo4j:5-community
+    container_name: realm-neo4j-prod
+    restart: unless-stopped
+    networks:
+      - realm-network
+    environment:
+      # Core Neo4j Configuration - Production
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: "yes"
+      
+      # Essential plugins for graph analytics
+      NEO4J_PLUGINS: '["apoc", "graph-data-science", "n10s"]'
+      
+      # Production performance tuning
+      NEO4J_server_memory_heap_initial__size: 2G
+      NEO4J_server_memory_heap_max__size: 4G
+      NEO4J_server_memory_pagecache_size: 2G
+      
+      # Security configurations - Production
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*,gds.*,n10s.*
+      NEO4J_dbms_security_procedures_allowlist: apoc.*,gds.*,n10s.*
+      NEO4J_dbms_security_auth_enabled: "true"
+      
+      # Connection settings - Production
+      NEO4J_dbms_connector_bolt_listen__address: :7687
+      NEO4J_dbms_connector_http_listen__address: :7474
+      NEO4J_dbms_connector_bolt_advertised__address: neo4j:7687
+      
+      # Transaction and query optimization - Production
+      NEO4J_dbms_transaction_timeout: 60s
+      NEO4J_dbms_transaction_concurrent_maximum: 2000
+      NEO4J_dbms_query_cache_size: 2000
+      
+      # Backup and logging - Production
+      NEO4J_dbms_logs_query_enabled: "false"
+      NEO4J_dbms_logs_security_enabled: "true"
+      NEO4J_dbms_backup_enabled: "true"
+    ports:
+      - "7687:7687"
+      - "7474:7474"
+    volumes:
+      - neo4j_data_prod:/data
+      - neo4j_logs_prod:/logs
+      - neo4j_import_prod:/var/lib/neo4j/import
+      - neo4j_plugins_prod:/plugins
+      - ./neo4j-init:/docker-entrypoint-initdb.d
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p ${NEO4J_PASSWORD} 'RETURN 1'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+        reservations:
+          memory: 4G
+
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: realm-backend-prod
+    restart: unless-stopped
+    networks:
+      - realm-network
+    ports:
+      - "8080:8080"
+    environment:
+      # Neo4j Connection - Production
+      SPRING_NEO4J_URI: ${NEO4J_URI:-bolt://neo4j:7687}
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: ${NEO4J_USERNAME:-neo4j}
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: ${NEO4J_PASSWORD}
+      
+      # Connection pool tuning - Production
+      SPRING_NEO4J_POOL_IDLE_TIME_BEFORE_CONNECTION_TEST: PT30S
+      SPRING_NEO4J_POOL_MAX_CONNECTION_POOL_SIZE: 100
+      SPRING_NEO4J_POOL_MAX_CONNECTION_LIFETIME: PT2H
+      SPRING_NEO4J_POOL_CONNECTION_ACQUISITION_TIMEOUT: PT60S
+      SPRING_NEO4J_POOL_METRICS_ENABLED: "true"
+      
+      # JWT Configuration - Production
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800000}
+      
+      # CORS Configuration - Production
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
+      CORS_MAX_AGE: ${CORS_MAX_AGE:-3600}
+      
+      # Spring Boot Configuration - Production
+      SPRING_PROFILES_ACTIVE: production
+      SERVER_PORT: 8080
+      
+      # Logging - Production
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_DATA_NEO4J: ${LOG_LEVEL_SPRING_DATA:-WARN}
+      LOGGING_LEVEL_ORG_NEO4J_DRIVER: ${LOG_LEVEL_NEO4J:-INFO}
+      LOGGING_LEVEL_ROOT: ${LOG_LEVEL_ROOT:-WARN}
+      
+      # JVM Options for Production
+      JAVA_OPTS: "-Xms1g -Xmx3g -XX:+UseG1GC -XX:G1HeapRegionSize=16m -XX:+UseStringDeduplication"
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    volumes:
+      - backend_logs_prod:/app/logs
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 2G
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: realm-frontend-prod
+    restart: unless-stopped
+    networks:
+      - realm-network
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      REACT_APP_API_URL: ${REACT_APP_API_URL}
+      REACT_APP_WS_URL: ${REACT_APP_WS_URL}
+      REACT_APP_NEO4J_BROWSER_URL: ${REACT_APP_NEO4J_BROWSER_URL}
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./ssl-certs:/etc/nginx/ssl:ro
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Production monitoring and backup services
+  backup:
+    image: alpine:latest
+    container_name: realm-backup
+    restart: unless-stopped
+    networks:
+      - realm-network
+    volumes:
+      - neo4j_data_prod:/neo4j-data:ro
+      - ./backups:/backups
+    command: |
+      sh -c '
+        while true; do
+          echo "Starting backup at $$(date)"
+          tar -czf /backups/neo4j-backup-$$(date +%Y%m%d-%H%M%S).tar.gz -C /neo4j-data .
+          find /backups -name "neo4j-backup-*.tar.gz" -mtime +7 -delete
+          echo "Backup completed at $$(date)"
+          sleep 86400
+        done
+      '
+    depends_on:
+      neo4j:
+        condition: service_healthy
+
+volumes:
+  neo4j_data_prod:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/lib/realm/neo4j-data
+  neo4j_logs_prod:
+    driver: local
+  neo4j_import_prod:
+    driver: local
+  neo4j_plugins_prod:
+    driver: local
+  backend_logs_prod:
+    driver: local

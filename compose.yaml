@@ -1,32 +1,131 @@
+networks:
+  realm-network:
+    driver: bridge
+
 services:
   neo4j:
-    image: 'neo4j:5.15'
+    image: neo4j:5-community
+    container_name: realm-neo4j
+    restart: unless-stopped
+    networks:
+      - realm-network
     environment:
-      - 'NEO4J_AUTH=neo4j/notverysecret'
-      - 'NEO4J_PLUGINS=["apoc"]'
-      - 'NEO4J_dbms_security_procedures_unrestricted=apoc.*'
-      - 'NEO4J_dbms_memory_heap_initial__size=512m'
-      - 'NEO4J_dbms_memory_heap_max__size=2G'
-      - 'NEO4J_dbms_memory_pagecache_size=1G'
-      - 'NEO4J_dbms_connector_bolt_listen__address=:7687'
-      - 'NEO4J_dbms_connector_http_listen__address=:7474'
+      # Core Neo4j Configuration
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-dev_password_2024}
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: "yes"
+      
+      # Essential plugins for graph analytics  
+      NEO4J_PLUGINS: '["apoc", "graph-data-science"]'
+      
+      # Performance tuning for PKM workloads
+      NEO4J_server_memory_heap_initial__size: 1G
+      NEO4J_server_memory_heap_max__size: 2G
+      NEO4J_server_memory_pagecache_size: 1G
+      
+      # Security configurations
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*,gds.*
+      NEO4J_dbms_security_procedures_allowlist: apoc.*,gds.*
+      
+      # Connection settings optimized for Spring Boot
+      NEO4J_dbms_connector_bolt_listen__address: :7687
+      NEO4J_dbms_connector_http_listen__address: :7474
+      NEO4J_dbms_connector_bolt_advertised__address: neo4j:7687
+      
+      # Transaction and query optimization
+      NEO4J_dbms_transaction_timeout: 30s
+      NEO4J_dbms_transaction_concurrent_maximum: 1000
+      
+      # Backup and logging
+      NEO4J_db_logs_query_enabled: INFO
+      NEO4J_db_logs_query_threshold: 1s
     ports:
-      - '7687:7687'
-      - '7474:7474'
+      - "7687:7687"
+      - "7474:7474"
     volumes:
       - neo4j_data:/data
       - neo4j_logs:/logs
       - neo4j_import:/var/lib/neo4j/import
       - neo4j_plugins:/plugins
+      - ./neo4j-init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "notverysecret", "RETURN 1"]
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p ${NEO4J_PASSWORD:-dev_password_2024} 'RETURN 1'"]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 40s
 
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: realm-backend
+    restart: unless-stopped
+    networks:
+      - realm-network
+    ports:
+      - "8080:8080"
+    environment:
+      # Neo4j Connection - Production Ready
+      SPRING_NEO4J_URI: ${NEO4J_URI:-bolt://neo4j:7687}
+      SPRING_NEO4J_AUTHENTICATION_USERNAME: ${NEO4J_USERNAME:-neo4j}
+      SPRING_NEO4J_AUTHENTICATION_PASSWORD: ${NEO4J_PASSWORD:-dev_password_2024}
+      
+      # Connection pool tuning for graph operations
+      SPRING_NEO4J_POOL_IDLE_TIME_BEFORE_CONNECTION_TEST: PT30S
+      SPRING_NEO4J_POOL_MAX_CONNECTION_POOL_SIZE: 50
+      SPRING_NEO4J_POOL_MAX_CONNECTION_LIFETIME: PT1H
+      SPRING_NEO4J_POOL_CONNECTION_ACQUISITION_TIMEOUT: PT60S
+      SPRING_NEO4J_POOL_METRICS_ENABLED: "true"
+      
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET:-development-jwt-secret-key-not-for-production-use-256-bits-minimum}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-3600000}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800000}
+      
+      # CORS Configuration
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001}
+      CORS_MAX_AGE: ${CORS_MAX_AGE:-3600}
+      
+      # Spring Boot Configuration
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-development}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      
+      # Logging
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_DATA_NEO4J: ${LOG_LEVEL_SPRING_DATA:-DEBUG}
+      LOGGING_LEVEL_ORG_NEO4J_DRIVER: ${LOG_LEVEL_NEO4J:-INFO}
+      LOGGING_LEVEL_ROOT: ${LOG_LEVEL_ROOT:-INFO}
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    volumes:
+      - backend_logs:/app/logs
+
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: realm-frontend
+    restart: unless-stopped
+    networks:
+      - realm-network
+    ports:
+      - "3000:80"
+    environment:
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:8080/api}
+      REACT_APP_WS_URL: ${REACT_APP_WS_URL:-ws://localhost:8080/ws}
+      REACT_APP_NEO4J_BROWSER_URL: ${REACT_APP_NEO4J_BROWSER_URL:-http://localhost:7474}
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   neo4j_data:
+    driver: local
   neo4j_logs:
+    driver: local
   neo4j_import:
+    driver: local
   neo4j_plugins:
+    driver: local
+  backend_logs:
+    driver: local

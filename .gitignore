@@ -1,0 +1,70 @@
+# Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+HELP.md
+
+# IDEs
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.settings/
+.project
+.classpath
+
+# 🚨 NEVER COMMIT SECRETS 🚨
+*.env
+.env*
+application-*.properties
+application-*.yml
+*.key
+*.pem
+*.p12
+*.jks
+*.crt
+*.cert
+keystore.*
+secrets.*
+api-keys.*
+
+# Neo4j
+neo4j/data/
+neo4j/logs/
+neo4j.conf
+
+# Frontend
+node_modules/
+dist/
+build/
+coverage/
+
+# Logs & temp
+*.log
+logs/
+temp/
+tmp/
+*.tmp
+.cache/
+
+# Docker
+docker-compose.override.yml
+docker-compose.*.yml
+
+# Backups
+*.backup
+*.bak
+*.dump
+
+# OS
+.DS_Store
+Thumbs.db
+*~
+*.swp
+
+# Claude
+.claude
+CLAUDE.md
+
+# Plan
+.plan

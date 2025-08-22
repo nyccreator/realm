@@ -10,14 +10,16 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
-import com.realm.config.Neo4jTestConfig;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.transaction.annotation.Transactional;
+import org.testcontainers.containers.Neo4jContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.Map;
 
@@ -36,9 +38,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(Neo4jTestConfig.class)
-@Transactional
+@Testcontainers
 public class AuthenticationIntegrationTest {
+    
+    @Container
+    static Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>("neo4j:5.15")
+            .withAdminPassword("testpassword");
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.neo4j.uri", neo4jContainer::getBoltUrl);
+        registry.add("spring.neo4j.authentication.username", () -> "neo4j");
+        registry.add("spring.neo4j.authentication.password", () -> "testpassword");
+        registry.add("spring.data.neo4j.database", () -> "neo4j");
+    }
     
     @Autowired
     private MockMvc mockMvc;
@@ -49,11 +62,8 @@ public class AuthenticationIntegrationTest {
     @Autowired
     private UserRepository userRepository;
     
-    @AfterEach
-    void cleanup() {
-        // Clean up test data
-        userRepository.deleteAll();
-    }
+    // Remove @AfterEach cleanup for now to avoid transaction conflicts
+    // TestContainers will provide clean database state for each test run
     
     @Test
     void testUserRegistration_Success() throws Exception {

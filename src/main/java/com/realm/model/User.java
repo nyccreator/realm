@@ -129,7 +129,7 @@ public class User implements UserDetails {
     @Override
     @JsonIgnore
     public boolean isEnabled() {
-        return isActive;
+        return isActive && isVerified;
     }
     
     // Utility methods for user management

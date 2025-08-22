@@ -126,6 +126,43 @@ public class Neo4jPerformanceConfig extends AbstractNeo4jConfig {
     
     
     /**
+     * Validates that all required indexes and constraints are in place
+     * This method can be called during startup or health checks
+     */
+    public void validateSchemaIntegrity() {
+        try (var session = driver().session()) {
+            log.info("Validating Neo4j schema integrity for PKM system");
+            
+            // Verify critical indexes exist
+            var result = session.run("SHOW INDEXES YIELD name, type WHERE type = 'BTREE' RETURN count(*) as indexCount");
+            if (result.hasNext()) {
+                long indexCount = result.next().get("indexCount").asLong();
+                log.info("Found {} BTREE indexes", indexCount);
+                
+                if (indexCount < 8) {
+                    log.warn("Expected at least 8 performance indexes, found {}", indexCount);
+                }
+            }
+            
+            // Verify constraints exist
+            var constraintResult = session.run("SHOW CONSTRAINTS YIELD name RETURN count(*) as constraintCount");
+            if (constraintResult.hasNext()) {
+                long constraintCount = constraintResult.next().get("constraintCount").asLong();
+                log.info("Found {} constraints", constraintCount);
+                
+                if (constraintCount < 3) {
+                    log.warn("Expected at least 3 constraints, found {}", constraintCount);
+                }
+            }
+            
+            log.info("Neo4j schema validation completed");
+            
+        } catch (Exception e) {
+            log.error("Error validating schema integrity: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
      * Optimized transaction configuration for PKM operations
      */
     @Override

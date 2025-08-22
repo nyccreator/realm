@@ -27,70 +27,54 @@ public interface UserRepository extends Neo4jRepository<User, String> {
     Optional<User> findByEmail(@Param("email") String email);
     
     /**
-     * Find active user by email
-     * Optimized for authentication flows
-     */
-    @Query("MATCH (u:User {email: $email, isActive: true}) RETURN u")
-    Optional<User> findActiveUserByEmail(@Param("email") String email);
-    
-    /**
-     * Find verified user by email
-     * Used for secure operations that require verified users
-     */
-    @Query("MATCH (u:User {email: $email, isActive: true, isVerified: true}) RETURN u")
-    Optional<User> findVerifiedUserByEmail(@Param("email") String email);
-    
-    /**
-     * Update user's last login timestamp
-     * Optimized single-property update
-     */
-    @Query("MATCH (u:User {id: $userId}) SET u.lastLoginAt = $timestamp, u.updatedAt = $timestamp RETURN u")
-    Optional<User> updateLastLogin(@Param("userId") String userId, @Param("timestamp") LocalDateTime timestamp);
-    
-    /**
-     * Check if email exists (for registration validation)
-     * Returns boolean result for efficient existence checks
+     * Existence checks for registration validation
      */
     @Query("MATCH (u:User {email: $email}) RETURN count(u) > 0")
     boolean existsByEmail(@Param("email") String email);
     
     /**
+     * Update last login timestamp
+     */
+    @Query("MATCH (u:User {id: $userId}) SET u.lastLoginAt = $timestamp RETURN u")
+    Optional<User> updateLastLogin(@Param("userId") String userId, @Param("timestamp") LocalDateTime timestamp);
+    
+    /**
+     * For single-user MVP, get the primary user
+     */
+    @Query("MATCH (u:User) RETURN u ORDER BY u.createdAt ASC LIMIT 1")
+    Optional<User> findPrimaryUser();
+    
+    /**
+     * Find active user by email (used by AuthService)
+     */
+    @Query("MATCH (u:User {email: $email, isActive: true}) RETURN u")
+    Optional<User> findActiveUserByEmail(@Param("email") String email);
+    
+    /**
+     * Find verified user by email (used by tests)
+     */
+    @Query("MATCH (u:User {email: $email, isVerified: true}) RETURN u")
+    Optional<User> findVerifiedUserByEmail(@Param("email") String email);
+    
+    /**
      * Update user verification status
-     * Used for account verification flows
      */
     @Query("MATCH (u:User {id: $userId}) SET u.isVerified = $verified, u.updatedAt = $timestamp RETURN u")
     Optional<User> updateVerificationStatus(@Param("userId") String userId, 
-                                          @Param("verified") boolean verified, 
-                                          @Param("timestamp") LocalDateTime timestamp);
+                                           @Param("verified") boolean verified, 
+                                           @Param("timestamp") LocalDateTime timestamp);
     
     /**
      * Update user active status
-     * Used for account activation/deactivation
      */
     @Query("MATCH (u:User {id: $userId}) SET u.isActive = $active, u.updatedAt = $timestamp RETURN u")
     Optional<User> updateActiveStatus(@Param("userId") String userId, 
-                                    @Param("active") boolean active, 
-                                    @Param("timestamp") LocalDateTime timestamp);
+                                     @Param("active") boolean active, 
+                                     @Param("timestamp") LocalDateTime timestamp);
     
     /**
-     * Get user profile with basic stats
-     * Returns user with computed statistics for dashboard
+     * User statistics for dashboard
      */
-    @Query("""
-        MATCH (u:User {id: $userId})
-        OPTIONAL MATCH (u)<-[:CREATED_BY]-(n:Note)
-        RETURN u, 
-               count(n) as noteCount,
-               max(n.updatedAt) as lastNoteUpdate
-        """)
-    Optional<User> findUserWithStats(@Param("userId") String userId);
-    
-    /**
-     * Update user preferences
-     * Optimized for preference updates without full entity loading
-     */
-    @Query("MATCH (u:User {id: $userId}) SET u.preferences = $preferences, u.updatedAt = $timestamp RETURN u")
-    Optional<User> updatePreferences(@Param("userId") String userId, 
-                                   @Param("preferences") java.util.Map<String, Object> preferences,
-                                   @Param("timestamp") LocalDateTime timestamp);
+    @Query("MATCH (u:User)-[:CREATED_BY]->(n:Note) WHERE u.id = $userId RETURN count(n)")
+    Long countNotesByUser(@Param("userId") String userId);
 }

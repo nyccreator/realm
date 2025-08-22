@@ -45,7 +45,7 @@ public class User implements UserDetails {
     
     @Property("displayName")
     @NotBlank(message = "Display name is required")
-    @Size(max = 100, message = "Display name cannot exceed 100 characters")
+    @Size(min = 2, max = 50, message = "Display name must be between 2 and 50 characters")
     private String displayName;
     
     @Property("firstName")
@@ -93,8 +93,7 @@ public class User implements UserDetails {
     @Override
     @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // For single-user system, we'll use simple role-based authority
-        return List.of(() -> "ROLE_USER");
+        return Collections.emptyList(); // Single user, no roles needed
     }
     
     @Override
@@ -130,7 +129,7 @@ public class User implements UserDetails {
     @Override
     @JsonIgnore
     public boolean isEnabled() {
-        return isActive && isVerified;
+        return isActive;
     }
     
     // Utility methods for user management

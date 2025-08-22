@@ -1,41 +1,45 @@
 package com.realm.controller;
 
+import com.realm.dto.AuthResponse;
+import com.realm.dto.LoginRequest;
+import com.realm.dto.RegisterRequest;
+import com.realm.exception.AuthenticationException;
+import com.realm.exception.UserAlreadyExistsException;
+import com.realm.exception.ValidationException;
 import com.realm.model.User;
 import com.realm.service.AuthService;
-import com.realm.service.AuthService.AuthResult;
+import com.realm.service.AuthenticationService;
+import com.realm.service.JwtTokenProvider;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
- * Authentication REST API Controller for the Realm PKM system.
+ * Authentication REST API Controller for Section 3.1 - Single-User Authentication
  * 
- * This controller provides secure REST endpoints for all authentication operations
- * including user registration, login, token refresh, profile management, and
- * password operations. All endpoints return structured JSON responses with
- * proper HTTP status codes.
- * 
- * Endpoints:
+ * This controller provides secure REST endpoints for authentication operations
+ * as specified in the development plan:
  * - POST /api/auth/register - User registration
  * - POST /api/auth/login - User authentication
+ * - GET /api/auth/validate - Token validation
  * - POST /api/auth/refresh - Token refresh
- * - GET /api/auth/me - Current user profile
- * - PUT /api/auth/profile - Update user profile
- * - PUT /api/auth/password - Change password
- * - POST /api/auth/verify - Verify user account
- * - POST /api/auth/logout - User logout
+ * 
+ * Features:
+ * - Comprehensive input validation
+ * - Structured error responses
+ * - Security-focused logging
+ * - JWT token management
+ * - CORS-enabled endpoints
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -43,316 +47,290 @@ import java.util.Map;
 public class AuthController {
     
     private final AuthService authService;
+    private final AuthenticationService authenticationService;
+    private final JwtTokenProvider jwtTokenProvider;
     
     @Autowired
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService,
+                         AuthenticationService authenticationService,
+                         JwtTokenProvider jwtTokenProvider) {
         this.authService = authService;
+        this.authenticationService = authenticationService;
+        this.jwtTokenProvider = jwtTokenProvider;
     }
     
     /**
      * Register a new user
+     * POST /api/auth/register
      */
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request, BindingResult bindingResult) {
         log.info("Registration attempt for email: {}", request.getEmail());
         
-        AuthResult result = authService.registerUser(
-            request.getEmail(),
-            request.getPassword(),
-            request.getDisplayName(),
-            request.getFirstName(),
-            request.getLastName()
-        );
-        
-        if (result.isSuccess()) {
-            Map<String, Object> data = createAuthResponseData(result);
-            return ResponseEntity.ok(ApiResponse.success("User registered successfully", data));
-        } else {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error(result.getMessage()));
+        try {
+            // Check for validation errors
+            if (bindingResult.hasErrors()) {
+                Map<String, Object> errorResponse = createValidationErrorResponse(bindingResult);
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+            
+            // Use the enhanced AuthService for registration
+            AuthService.AuthResult result = authService.registerUser(
+                request.getEmail(),
+                request.getPassword(),
+                request.getDisplayName(),
+                null, // firstName - not in basic registration
+                null  // lastName - not in basic registration
+            );
+            
+            if (result.isSuccess()) {
+                // Create response with both access and refresh tokens
+                Map<String, Object> response = new HashMap<>();
+                response.put("message", result.getMessage());
+                response.put("token", result.getAccessToken()); // For backward compatibility
+                response.put("accessToken", result.getAccessToken());
+                response.put("refreshToken", result.getRefreshToken());
+                response.put("user", result.getUser());
+                
+                log.info("User registered successfully: {}", request.getEmail());
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            } else {
+                Map<String, Object> errorResponse = createErrorResponse(
+                    "Registration Failed", 
+                    result.getMessage(), 
+                    HttpStatus.BAD_REQUEST.value()
+                );
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+            
+        } catch (UserAlreadyExistsException e) {
+            log.warn("Registration failed - user already exists: {}", request.getEmail());
+            Map<String, Object> errorResponse = createErrorResponse(
+                "Registration Failed", 
+                e.getMessage(), 
+                HttpStatus.CONFLICT.value()
+            );
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+            
+        } catch (ValidationException e) {
+            log.warn("Registration failed - validation error: {}", e.getMessage());
+            Map<String, Object> errorResponse = createErrorResponse(
+                "Validation Error", 
+                e.getMessage(), 
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
+            
+        } catch (Exception e) {
+            log.error("Unexpected error during registration for {}: {}", request.getEmail(), e.getMessage(), e);
+            Map<String, Object> errorResponse = createErrorResponse(
+                "Registration Failed", 
+                "An unexpected error occurred during registration", 
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
     
     /**
      * Authenticate user and return JWT tokens
+     * POST /api/auth/login
      */
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, BindingResult bindingResult) {
         log.info("Login attempt for email: {}", request.getEmail());
         
-        AuthResult result = authService.authenticateUser(request.getEmail(), request.getPassword());
+        try {
+            // Check for validation errors
+            if (bindingResult.hasErrors()) {
+                Map<String, Object> errorResponse = createValidationErrorResponse(bindingResult);
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+            
+            // Use the enhanced AuthService for authentication
+            AuthService.AuthResult result = authService.authenticateUser(
+                request.getEmail(),
+                request.getPassword()
+            );
+            
+            if (result.isSuccess()) {
+                // Create response with both access and refresh tokens
+                Map<String, Object> response = new HashMap<>();
+                response.put("message", result.getMessage());
+                response.put("token", result.getAccessToken()); // For backward compatibility
+                response.put("accessToken", result.getAccessToken());
+                response.put("refreshToken", result.getRefreshToken());
+                response.put("user", result.getUser());
+                
+                log.info("User authenticated successfully: {}", request.getEmail());
+                return ResponseEntity.ok(response);
+            } else {
+                Map<String, Object> errorResponse = createErrorResponse(
+                    "Authentication Failed", 
+                    result.getMessage(), 
+                    HttpStatus.UNAUTHORIZED.value()
+                );
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+            
+        } catch (AuthenticationException e) {
+            log.warn("Authentication failed for {}: {}", request.getEmail(), e.getMessage());
+            Map<String, Object> errorResponse = createErrorResponse(
+                "Authentication Failed", 
+                "Invalid email or password", 
+                HttpStatus.UNAUTHORIZED.value()
+            );
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            
+        } catch (ValidationException e) {
+            log.warn("Login failed - validation error: {}", e.getMessage());
+            Map<String, Object> errorResponse = createErrorResponse(
+                "Validation Error", 
+                e.getMessage(), 
+                HttpStatus.BAD_REQUEST.value()
+            );
+            return ResponseEntity.badRequest().body(errorResponse);
+            
+        } catch (Exception e) {
+            log.error("Unexpected error during login for {}: {}", request.getEmail(), e.getMessage(), e);
+            Map<String, Object> errorResponse = createErrorResponse(
+                "Authentication Failed", 
+                "An unexpected error occurred during authentication", 
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+    
+    /**
+     * Validate JWT token and return user information
+     * GET /api/auth/validate
+     */
+    @GetMapping("/validate")
+    public ResponseEntity<?> validateToken(@RequestHeader(value = "Authorization", required = false) String authHeader,
+                                          @AuthenticationPrincipal User user) {
+        log.debug("Token validation request received");
         
-        if (result.isSuccess()) {
-            Map<String, Object> data = createAuthResponseData(result);
-            return ResponseEntity.ok(ApiResponse.success("Login successful", data));
-        } else {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error(result.getMessage()));
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                Map<String, Object> response = createErrorResponse(
+                    "Invalid Token", 
+                    "Authorization header missing or invalid format", 
+                    HttpStatus.UNAUTHORIZED.value()
+                );
+                response.put("valid", false);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+            String token = authHeader.substring(7);
+            if (jwtTokenProvider.validateToken(token) && user != null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("valid", true);
+                response.put("user", user);
+                response.put("tokenExpiry", jwtTokenProvider.getExpirationDateFromToken(token));
+                response.put("remainingTime", jwtTokenProvider.getRemainingTimeToExpire(token));
+                
+                log.debug("Token validated successfully for user: {}", user.getEmail());
+                return ResponseEntity.ok(response);
+            } else {
+                Map<String, Object> response = createErrorResponse(
+                    "Invalid Token", 
+                    "Token is invalid or expired", 
+                    HttpStatus.UNAUTHORIZED.value()
+                );
+                response.put("valid", false);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            
+        } catch (Exception e) {
+            log.error("Error during token validation: {}", e.getMessage(), e);
+            Map<String, Object> response = createErrorResponse(
+                "Token Validation Failed", 
+                "An error occurred while validating the token", 
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+            response.put("valid", false);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
     
     /**
      * Refresh access token using refresh token
+     * POST /api/auth/refresh
      */
     @PostMapping("/refresh")
-    public ResponseEntity<ApiResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
-        log.debug("Token refresh attempt");
+    public ResponseEntity<?> refreshToken(@RequestBody Map<String, String> request) {
+        log.debug("Token refresh request received");
         
-        AuthResult result = authService.refreshToken(request.getRefreshToken());
-        
-        if (result.isSuccess()) {
-            Map<String, Object> data = new HashMap<>();
-            data.put("accessToken", result.getAccessToken());
-            data.put("refreshToken", result.getRefreshToken());
-            data.put("user", createUserResponse(result.getUser()));
+        try {
+            String refreshToken = request.get("refreshToken");
+            if (refreshToken == null || refreshToken.trim().isEmpty()) {
+                Map<String, Object> errorResponse = createErrorResponse(
+                    "Invalid Request", 
+                    "Refresh token is required", 
+                    HttpStatus.BAD_REQUEST.value()
+                );
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
             
-            return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", data));
-        } else {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error(result.getMessage()));
+            AuthService.AuthResult result = authService.refreshToken(refreshToken);
+            
+            if (result.isSuccess()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("message", result.getMessage());
+                response.put("accessToken", result.getAccessToken());
+                response.put("refreshToken", result.getRefreshToken());
+                response.put("user", result.getUser());
+                
+                log.debug("Token refreshed successfully");
+                return ResponseEntity.ok(response);
+            } else {
+                Map<String, Object> errorResponse = createErrorResponse(
+                    "Token Refresh Failed", 
+                    result.getMessage(), 
+                    HttpStatus.UNAUTHORIZED.value()
+                );
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+            }
+            
+        } catch (Exception e) {
+            log.error("Error during token refresh: {}", e.getMessage(), e);
+            Map<String, Object> errorResponse = createErrorResponse(
+                "Token Refresh Failed", 
+                "An error occurred while refreshing the token", 
+                HttpStatus.INTERNAL_SERVER_ERROR.value()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
     
-    /**
-     * Get current authenticated user profile
-     */
-    @GetMapping("/me")
-    public ResponseEntity<ApiResponse> getCurrentUser(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("User not authenticated"));
-        }
-        
-        User user = (User) authentication.getPrincipal();
-        Map<String, Object> data = Map.of("user", createUserResponse(user));
-        
-        return ResponseEntity.ok(ApiResponse.success("User profile retrieved", data));
+    // Helper methods for error handling
+    
+    private Map<String, Object> createErrorResponse(String error, String message, int status) {
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("error", error);
+        errorResponse.put("message", message);
+        errorResponse.put("status", status);
+        errorResponse.put("timestamp", LocalDateTime.now());
+        return errorResponse;
     }
     
-    /**
-     * Update user profile
-     */
-    @PutMapping("/profile")
-    public ResponseEntity<ApiResponse> updateProfile(@Valid @RequestBody UpdateProfileRequest request, 
-                                                    Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("User not authenticated"));
-        }
-        
-        User user = (User) authentication.getPrincipal();
-        log.info("Profile update attempt for user: {}", user.getId());
-        
-        AuthResult result = authService.updateProfile(
-            user.getId(),
-            request.getDisplayName(),
-            request.getFirstName(),
-            request.getLastName(),
-            request.getBio()
+    private Map<String, Object> createValidationErrorResponse(BindingResult bindingResult) {
+        Map<String, Object> errorResponse = createErrorResponse(
+            "Validation Failed", 
+            "Invalid input data", 
+            HttpStatus.BAD_REQUEST.value()
         );
         
-        if (result.isSuccess()) {
-            Map<String, Object> data = Map.of("user", createUserResponse(result.getUser()));
-            return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", data));
-        } else {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error(result.getMessage()));
-        }
-    }
-    
-    /**
-     * Change user password
-     */
-    @PutMapping("/password")
-    public ResponseEntity<ApiResponse> changePassword(@Valid @RequestBody ChangePasswordRequest request,
-                                                     Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error("User not authenticated"));
-        }
+        Map<String, String> fieldErrors = bindingResult.getFieldErrors()
+            .stream()
+            .collect(Collectors.toMap(
+                fieldError -> fieldError.getField(),
+                fieldError -> fieldError.getDefaultMessage(),
+                (existing, replacement) -> existing // Keep first error message for duplicate fields
+            ));
         
-        User user = (User) authentication.getPrincipal();
-        log.info("Password change attempt for user: {}", user.getId());
-        
-        AuthResult result = authService.changePassword(
-            user.getId(),
-            request.getCurrentPassword(),
-            request.getNewPassword()
-        );
-        
-        if (result.isSuccess()) {
-            return ResponseEntity.ok(ApiResponse.success("Password changed successfully", null));
-        } else {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error(result.getMessage()));
-        }
-    }
-    
-    /**
-     * Verify user account
-     */
-    @PostMapping("/verify")
-    public ResponseEntity<ApiResponse> verifyAccount(@Valid @RequestBody VerifyAccountRequest request) {
-        log.info("Account verification attempt for user: {}", request.getUserId());
-        
-        AuthResult result = authService.verifyUser(request.getUserId());
-        
-        if (result.isSuccess()) {
-            Map<String, Object> data = Map.of("user", createUserResponse(result.getUser()));
-            return ResponseEntity.ok(ApiResponse.success("Account verified successfully", data));
-        } else {
-            return ResponseEntity.badRequest()
-                .body(ApiResponse.error(result.getMessage()));
-        }
-    }
-    
-    /**
-     * Logout user (client-side token removal)
-     */
-    @PostMapping("/logout")
-    public ResponseEntity<ApiResponse> logout(Authentication authentication) {
-        if (authentication != null && authentication.isAuthenticated()) {
-            User user = (User) authentication.getPrincipal();
-            log.info("User logout: {}", user.getEmail());
-        }
-        
-        // Clear security context
-        SecurityContextHolder.clearContext();
-        
-        return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
-    }
-    
-    /**
-     * Health check endpoint for authentication service
-     */
-    @GetMapping("/health")
-    public ResponseEntity<ApiResponse> health() {
-        Map<String, Object> data = Map.of(
-            "status", "UP",
-            "timestamp", LocalDateTime.now(),
-            "service", "Authentication Service"
-        );
-        
-        return ResponseEntity.ok(ApiResponse.success("Authentication service is healthy", data));
-    }
-    
-    // Helper methods
-    
-    private Map<String, Object> createAuthResponseData(AuthResult result) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("accessToken", result.getAccessToken());
-        data.put("refreshToken", result.getRefreshToken());
-        data.put("user", createUserResponse(result.getUser()));
-        return data;
-    }
-    
-    private Map<String, Object> createUserResponse(User user) {
-        Map<String, Object> userResponse = new HashMap<>();
-        userResponse.put("id", user.getId());
-        userResponse.put("email", user.getEmail());
-        userResponse.put("displayName", user.getDisplayName());
-        userResponse.put("firstName", user.getFirstName());
-        userResponse.put("lastName", user.getLastName());
-        userResponse.put("fullName", user.getFullName());
-        userResponse.put("bio", user.getBio());
-        userResponse.put("profilePictureUrl", user.getProfilePictureUrl());
-        userResponse.put("isActive", user.isActive());
-        userResponse.put("isVerified", user.isVerified());
-        userResponse.put("createdAt", user.getCreatedAt());
-        userResponse.put("lastLoginAt", user.getLastLoginAt());
-        return userResponse;
-    }
-    
-    // Request/Response DTOs
-    
-    @Data
-    public static class RegisterRequest {
-        @NotBlank(message = "Email is required")
-        @Email(message = "Please provide a valid email address")
-        private String email;
-        
-        @NotBlank(message = "Password is required")
-        @Size(min = 8, message = "Password must be at least 8 characters long")
-        private String password;
-        
-        @NotBlank(message = "Display name is required")
-        @Size(max = 100, message = "Display name cannot exceed 100 characters")
-        private String displayName;
-        
-        @Size(max = 50, message = "First name cannot exceed 50 characters")
-        private String firstName;
-        
-        @Size(max = 50, message = "Last name cannot exceed 50 characters")
-        private String lastName;
-    }
-    
-    @Data
-    public static class LoginRequest {
-        @NotBlank(message = "Email is required")
-        @Email(message = "Please provide a valid email address")
-        private String email;
-        
-        @NotBlank(message = "Password is required")
-        private String password;
-    }
-    
-    @Data
-    public static class RefreshTokenRequest {
-        @NotBlank(message = "Refresh token is required")
-        private String refreshToken;
-    }
-    
-    @Data
-    public static class UpdateProfileRequest {
-        @Size(max = 100, message = "Display name cannot exceed 100 characters")
-        private String displayName;
-        
-        @Size(max = 50, message = "First name cannot exceed 50 characters")
-        private String firstName;
-        
-        @Size(max = 50, message = "Last name cannot exceed 50 characters")
-        private String lastName;
-        
-        @Size(max = 500, message = "Bio cannot exceed 500 characters")
-        private String bio;
-    }
-    
-    @Data
-    public static class ChangePasswordRequest {
-        @NotBlank(message = "Current password is required")
-        private String currentPassword;
-        
-        @NotBlank(message = "New password is required")
-        @Size(min = 8, message = "Password must be at least 8 characters long")
-        private String newPassword;
-    }
-    
-    @Data
-    public static class VerifyAccountRequest {
-        @NotBlank(message = "User ID is required")
-        private String userId;
-    }
-    
-    @Data
-    public static class ApiResponse {
-        private boolean success;
-        private String message;
-        private Object data;
-        private LocalDateTime timestamp;
-        
-        private ApiResponse(boolean success, String message, Object data) {
-            this.success = success;
-            this.message = message;
-            this.data = data;
-            this.timestamp = LocalDateTime.now();
-        }
-        
-        public static ApiResponse success(String message, Object data) {
-            return new ApiResponse(true, message, data);
-        }
-        
-        public static ApiResponse error(String message) {
-            return new ApiResponse(false, message, null);
-        }
+        errorResponse.put("fieldErrors", fieldErrors);
+        return errorResponse;
     }
 }

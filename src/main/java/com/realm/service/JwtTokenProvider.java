@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import com.realm.model.User;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
@@ -59,6 +60,23 @@ public class JwtTokenProvider {
     }
     
     /**
+     * Generate JWT token from User entity
+     */
+    public String generateToken(User user) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + tokenValidityMilliseconds);
+        
+        return Jwts.builder()
+                .setSubject(user.getEmail())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .setIssuer("realm-pkm")
+                .setAudience("realm-user")
+                .signWith(secretKey, SignatureAlgorithm.HS256)
+                .compact();
+    }
+    
+    /**
      * Generate JWT token from username
      */
     public String generateTokenFromUsername(String username) {
@@ -91,6 +109,13 @@ public class JwtTokenProvider {
                 .claim("type", "refresh")
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
+    }
+    
+    /**
+     * Extract email from JWT token (for Section 3.1 compatibility)
+     */
+    public String getEmailFromToken(String token) {
+        return getUsernameFromToken(token);
     }
     
     /**

@@ -8,6 +8,7 @@ import {NoteEditor} from './NoteEditor';
 import {NoteLinkPanel} from './NoteLinkPanel';
 import {TagManager} from './TagManager';
 import {SearchInterface} from './SearchInterface';
+import {GraphVisualization} from './GraphVisualization';
 import {Note} from '../types/note';
 
 export const NoteManagement: React.FC = () => {
@@ -23,7 +24,7 @@ export const NoteManagement: React.FC = () => {
     loadNotes
   } = useNoteStore();
 
-  const [activeTab, setActiveTab] = useState<'editor' | 'links' | 'tags'>('editor');
+  const [activeTab, setActiveTab] = useState<'editor' | 'links' | 'tags' | 'graph'>('editor');
 
   // Load notes on mount
   useEffect(() => {
@@ -83,11 +84,17 @@ export const NoteManagement: React.FC = () => {
               {/* Page Title */}
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">
-                  {currentNote ? currentNote.title : 'Realm Notes'}
+                  {currentNote ? currentNote.title : 
+                   activeTab === 'graph' ? 'Knowledge Graph' : 'Realm Notes'}
                 </h1>
                 {currentNote && (
                   <p className="text-sm text-gray-500">
                     Section 3.2 - Rich Text Editing & Manual Linking
+                  </p>
+                )}
+                {!currentNote && activeTab === 'graph' && (
+                  <p className="text-sm text-gray-500">
+                    Section 3.3 - Graph Visualization
                   </p>
                 )}
               </div>
@@ -95,10 +102,11 @@ export const NoteManagement: React.FC = () => {
 
             {/* Header Actions */}
             <div className="flex items-center space-x-2">
-              {currentNote && (
-                <>
-                  {/* Tab Navigation */}
-                  <div className="flex bg-gray-100 rounded-lg p-1">
+              {/* Global Navigation - always show Graph button */}
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                {currentNote ? (
+                  <>
+                    {/* Note-specific tabs */}
                     <button
                       onClick={() => setActiveTab('editor')}
                       className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
@@ -138,9 +146,27 @@ export const NoteManagement: React.FC = () => {
                       </svg>
                       Tags ({currentNote.tags.length})
                     </button>
-                  </div>
-                </>
-              )}
+                  </>
+                ) : null}
+                
+                {/* Graph tab - always available */}
+                <button
+                  onClick={() => {
+                    setActiveTab('graph');
+                    setCurrentNote(null); // Clear current note when viewing global graph
+                  }}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                    activeTab === 'graph'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <svg className="h-4 w-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  Graph
+                </button>
+              </div>
             </div>
           </div>
         </header>
@@ -171,7 +197,11 @@ export const NoteManagement: React.FC = () => {
         <main className="flex-1 flex min-h-0">
           {/* Primary Panel */}
           <div className="flex-1 flex flex-col min-w-0">
-            {currentNote ? (
+            {activeTab === 'graph' ? (
+              <div className="flex-1 bg-white">
+                <GraphVisualization />
+              </div>
+            ) : currentNote ? (
               <>
                 {activeTab === 'editor' && (
                   <NoteEditor 
@@ -207,23 +237,35 @@ export const NoteManagement: React.FC = () => {
                   
                   <p className="text-gray-600 mb-6">
                     Create rich, interconnected notes with powerful linking and organization features.
-                    {!sidebarOpen && ' Open the sidebar to get started.'}
+                    {!sidebarOpen && ' Open the sidebar to get started, or explore your knowledge graph.'}
                   </p>
 
-                  {!sidebarOpen && (
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    {!sidebarOpen && (
+                      <button
+                        onClick={toggleSidebar}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        Open Sidebar
+                      </button>
+                    )}
+                    
                     <button
-                      onClick={toggleSidebar}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      onClick={() => setActiveTab('graph')}
+                      className="inline-flex items-center px-4 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                       </svg>
-                      Open Sidebar
+                      View Graph
                     </button>
-                  )}
+                  </div>
 
                   <div className="mt-8 text-sm text-gray-500">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                       <div className="flex items-center">
                         <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -235,6 +277,12 @@ export const NoteManagement: React.FC = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
                         Manual linking
+                      </div>
+                      <div className="flex items-center">
+                        <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Graph visualization
                       </div>
                       <div className="flex items-center">
                         <svg className="h-5 w-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

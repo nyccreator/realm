@@ -1,13 +1,17 @@
-// Dashboard Component for Section 3.2 - Rich Text Editing & Manual Linking
-// Main application interface with integrated note management system
+// Dashboard Component for Section 3.3 - Graph Visualization
+// Main application interface with integrated note management and graph visualization
 
-import React from 'react';
+import React, {useState} from 'react';
 import {useAuth} from '../contexts/AuthContext';
 import {NoteManagement} from './NoteManagement';
+import {GraphVisualization} from './GraphVisualization';
 import {QueryProvider} from '../providers/QueryProvider';
+
+type ActiveView = 'notes' | 'graph';
 
 export const Dashboard: React.FC = () => {
   const { user, logout } = useAuth();
+  const [activeView, setActiveView] = useState<ActiveView>('notes');
 
   const handleLogout = () => {
     logout();
@@ -45,6 +49,36 @@ export const Dashboard: React.FC = () => {
                   </p>
                 </div>
               </div>
+
+              {/* Navigation Tabs */}
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveView('notes')}
+                  className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    activeView === 'notes'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Notes
+                </button>
+                <button
+                  onClick={() => setActiveView('graph')}
+                  className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    activeView === 'graph'
+                      ? 'bg-white text-blue-700 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14-7H5m14 14H5" />
+                  </svg>
+                  Graph
+                </button>
+              </div>
               
               <div className="flex items-center space-x-4">
                 <div className="text-sm text-gray-600 hidden sm:block">
@@ -73,7 +107,13 @@ export const Dashboard: React.FC = () => {
 
         {/* Main Application */}
         <div className="h-screen pt-[73px]"> {/* Account for header height */}
-          <NoteManagement />
+          {activeView === 'notes' ? (
+            <NoteManagement />
+          ) : (
+            <div className="h-full">
+              <GraphVisualization />
+            </div>
+          )}
         </div>
 
         {/* Footer/Status Bar */}
@@ -81,9 +121,11 @@ export const Dashboard: React.FC = () => {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div className="h-2 w-2 bg-green-400 rounded-full"></div>
-              <span>Section 3.2 Active</span>
+              <span>Section 3.3 Active</span>
             </div>
-            <span className="hidden sm:inline">Rich Text Editing & Manual Linking</span>
+            <span className="hidden sm:inline">
+              {activeView === 'notes' ? 'Note Management' : 'Graph Visualization'}
+            </span>
           </div>
           
           <div className="flex items-center space-x-4">

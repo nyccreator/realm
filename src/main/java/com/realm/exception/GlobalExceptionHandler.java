@@ -218,6 +218,66 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * Handle note not found exceptions
+     */
+    @ExceptionHandler(NoteNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoteNotFoundException(
+            NoteNotFoundException ex, WebRequest request) {
+        
+        log.warn("Note not found in request to {}: {}", 
+                request.getDescription(false), ex.getMessage());
+        
+        Map<String, Object> errorResponse = createErrorResponse(
+            "Note Not Found",
+            ex.getMessage(),
+            HttpStatus.NOT_FOUND.value(),
+            request
+        );
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+    
+    /**
+     * Handle note link not found exceptions
+     */
+    @ExceptionHandler(NoteLinkNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNoteLinkNotFoundException(
+            NoteLinkNotFoundException ex, WebRequest request) {
+        
+        log.warn("Note link not found in request to {}: {}", 
+                request.getDescription(false), ex.getMessage());
+        
+        Map<String, Object> errorResponse = createErrorResponse(
+            "Note Link Not Found",
+            ex.getMessage(),
+            HttpStatus.NOT_FOUND.value(),
+            request
+        );
+        
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+    
+    /**
+     * Handle note access denied exceptions
+     */
+    @ExceptionHandler(NoteAccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleNoteAccessDeniedException(
+            NoteAccessDeniedException ex, WebRequest request) {
+        
+        log.warn("Note access denied in request to {}: {}", 
+                request.getDescription(false), ex.getMessage());
+        
+        Map<String, Object> errorResponse = createErrorResponse(
+            "Access Denied",
+            "You don't have permission to access this note",
+            HttpStatus.FORBIDDEN.value(),
+            request
+        );
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+    
+    /**
      * Handle illegal argument exceptions
      */
     @ExceptionHandler(IllegalArgumentException.class)

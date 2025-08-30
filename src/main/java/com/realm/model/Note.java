@@ -1,13 +1,16 @@
 package com.realm.model;
 
-import org.springframework.data.neo4j.core.schema.*;
-import org.springframework.data.annotation.Id;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.neo4j.core.schema.GeneratedValue;
+import org.springframework.data.neo4j.core.schema.Node;
+import org.springframework.data.neo4j.core.schema.Property;
+import org.springframework.data.neo4j.core.schema.Relationship;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -29,7 +32,7 @@ public class Note {
     
     @Id 
     @GeneratedValue
-    private String id;
+    private Long id;
     
     @Property("title")
     @NotBlank(message = "Note title is required")
@@ -66,9 +69,7 @@ public class Note {
     @Builder.Default
     private boolean isFavorite = false;
     
-    @Property("metadata")
-    @Builder.Default
-    private Map<String, Object> metadata = new HashMap<>();
+    // Metadata removed for simplicity - can be added back later with proper JSON serialization
     
     @Property("wordCount")
     @Builder.Default
@@ -153,17 +154,7 @@ public class Note {
         }
     }
     
-    public void updateMetadata(String key, Object value) {
-        if (metadata == null) {
-            metadata = new HashMap<>();
-        }
-        metadata.put(key, value);
-        this.updatedAt = LocalDateTime.now();
-    }
-    
-    public Object getMetadata(String key) {
-        return metadata != null ? metadata.get(key) : null;
-    }
+    // Metadata methods removed - can be added back later with proper JSON serialization
     
     public void markAsAccessed() {
         this.lastAccessedAt = LocalDateTime.now();

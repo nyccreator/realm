@@ -1,15 +1,16 @@
 package com.realm.model;
 
-import org.springframework.data.neo4j.core.schema.*;
-import org.springframework.data.annotation.Id;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.neo4j.core.schema.GeneratedValue;
+import org.springframework.data.neo4j.core.schema.Property;
+import org.springframework.data.neo4j.core.schema.RelationshipProperties;
+import org.springframework.data.neo4j.core.schema.TargetNode;
 
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.HashMap;
 
 /**
  * NoteLink represents the relationship properties between Notes in the knowledge graph.
@@ -30,7 +31,7 @@ public class NoteLink {
     
     @Id 
     @GeneratedValue
-    private String id;
+    private Long id;
     
     @Property("type")
     @Builder.Default
@@ -51,9 +52,7 @@ public class NoteLink {
     @Builder.Default
     private String direction = "OUTGOING"; // OUTGOING, INCOMING, BIDIRECTIONAL
     
-    @Property("metadata")
-    @Builder.Default
-    private Map<String, Object> metadata = new HashMap<>();
+    // Metadata removed for simplicity - can be added back later with proper JSON serialization
     
     @Property("createdAt")
     @Builder.Default
@@ -133,24 +132,7 @@ public class NoteLink {
         this.updatedAt = LocalDateTime.now();
     }
     
-    public void addMetadata(String key, Object value) {
-        if (metadata == null) {
-            metadata = new HashMap<>();
-        }
-        metadata.put(key, value);
-        this.updatedAt = LocalDateTime.now();
-    }
-    
-    public Object getMetadata(String key) {
-        return metadata != null ? metadata.get(key) : null;
-    }
-    
-    public void removeMetadata(String key) {
-        if (metadata != null) {
-            metadata.remove(key);
-            this.updatedAt = LocalDateTime.now();
-        }
-    }
+    // Metadata methods removed - can be added back later with proper JSON serialization
     
     // Validation methods
     public static boolean isValidType(String type) {

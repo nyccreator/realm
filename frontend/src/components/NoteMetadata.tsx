@@ -33,7 +33,7 @@ export const NoteMetadata: React.FC<NoteMetadataProps> = ({ note }) => {
     
     if (trimmedTitle && trimmedTitle !== note.title) {
       try {
-        await updateNote(note.id, { title: trimmedTitle });
+        await updateNote(String(note.id), { title: trimmedTitle });
       } catch (error) {
         // Revert title on error
         setTitle(note.title);
@@ -142,10 +142,10 @@ export const NoteMetadata: React.FC<NoteMetadataProps> = ({ note }) => {
               className="font-mono text-xs opacity-50 cursor-pointer"
               title="Note ID (click to copy)"
               onClick={() => {
-                navigator.clipboard.writeText(note.id);
+                navigator.clipboard.writeText(String(note.id));
               }}
             >
-              #{note.id.slice(-8)}
+              #{String(note.id).slice(-8)}
             </div>
           </div>
 

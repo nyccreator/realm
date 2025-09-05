@@ -56,8 +56,39 @@ public class GraphVisualizationService {
             nodeSet.add(graphNode);
         }
         
-        // TODO: Add edges from outgoing links (temporarily disabled to fix loading issue)
-        // For now, we'll just return nodes without edges to test the basic functionality
+        // Second pass: create edges from outgoing links
+        for (Note note : notes) {
+            String sourceId = note.getId().toString();
+            
+            if (note.getOutgoingLinks() != null) {
+                for (NoteLink link : note.getOutgoingLinks()) {
+                    if (link.getTargetNote() != null) {
+                        String targetId = link.getTargetNote().getId().toString();
+                        
+                        // Only add edge if target note is in our node set
+                        boolean targetExists = nodeSet.stream()
+                            .anyMatch(node -> node.getId().equals(targetId));
+                        
+                        if (targetExists) {
+                            GraphEdge edge = GraphEdge.builder()
+                                .id(link.getId() != null ? link.getId().toString() : 
+                                    sourceId + "_" + targetId)
+                                .source(sourceId)
+                                .target(targetId)
+                                .type(link.getType() != null ? link.getType() : "REFERENCES")
+                                .context(link.getContext())
+                                .strength(link.getStrength() != null ? link.getStrength() : 1.0)
+                                .color(getEdgeColor(link.getType()))
+                                .width(calculateEdgeWidth(link.getStrength() != null ? 
+                                    link.getStrength() : 1.0))
+                                .build();
+                            
+                            edgeSet.add(edge);
+                        }
+                    }
+                }
+            }
+        }
         
         GraphData graphData = GraphData.builder()
             .nodes(new ArrayList<>(nodeSet))
@@ -347,9 +378,17 @@ public class GraphVisualizationService {
      * Get connection count for a specific note using simple calculation
      */
     private int getConnectionCountForNote(Note note) {
-        // For now, return 0 to avoid relationship loading issues
-        // TODO: Implement proper connection counting
-        return 0;
+        int count = 0;
+        
+        // Count outgoing links
+        if (note.getOutgoingLinks() != null) {
+            count += note.getOutgoingLinks().size();
+        }
+        
+        // TODO: In the future, we can add a query to count incoming links
+        // For now, we only count outgoing links to avoid relationship loading issues
+        
+        return count;
     }
     
     /**

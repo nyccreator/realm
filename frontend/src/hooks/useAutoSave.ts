@@ -71,7 +71,7 @@ export const useAutoSave = ({
       updateEditorState({ isSaving: true });
       
       // Update the note with current content
-      await updateNote(note.id, { 
+      await updateNote(String(note.id), { 
         content,
         title: note.title,
         tags: note.tags
@@ -121,7 +121,7 @@ export const useAutoSave = ({
     try {
       updateEditorState({ isSaving: true });
       
-      await updateNote(note.id, { 
+      await updateNote(String(note.id), { 
         content,
         title: note.title,
         tags: note.tags

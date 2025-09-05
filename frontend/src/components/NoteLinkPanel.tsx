@@ -22,7 +22,7 @@ export const NoteLinkPanel: React.FC<NoteLinkPanelProps> = ({ note }) => {
   const loadBacklinks = useCallback(async () => {
     setLoadingBacklinks(true);
     try {
-      const backlinkNotes = await noteService.getBacklinks(note.id);
+      const backlinkNotes = await noteService.getBacklinks(String(note.id));
       setBacklinks(backlinkNotes);
     } catch (error) {
       console.error('Failed to load backlinks:', error);
@@ -37,7 +37,7 @@ export const NoteLinkPanel: React.FC<NoteLinkPanelProps> = ({ note }) => {
   }, [loadBacklinks]);
 
   const handleCreateLink = async (targetNoteId: string, context?: string) => {
-    const newLink = await createLink(note.id, {
+    const newLink = await createLink(String(note.id), {
       targetNoteId,
       context,
       type: 'REFERENCES'
@@ -131,7 +131,7 @@ export const NoteLinkPanel: React.FC<NoteLinkPanelProps> = ({ note }) => {
                     </div>
                     
                     <button
-                      onClick={() => handleRemoveLink(link.id)}
+                      onClick={() => handleRemoveLink(String(link.id))}
                       className="ml-2 p-1 text-gray-400 hover:text-red-600 rounded transition-colors"
                       title="Remove link"
                     >

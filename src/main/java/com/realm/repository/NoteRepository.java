@@ -23,10 +23,13 @@ import java.util.Optional;
 public interface NoteRepository extends Neo4jRepository<Note, Long> {
     
     /**
-     * Find all notes created by a specific user
+     * Find all notes created by a specific user with their outgoing relationships
      * Ordered by most recently updated first
+     * This query fetches notes along with their outgoing links for graph visualization
      */
-    @Query("MATCH (n:Note)-[:CREATED_BY]->(u:User) WHERE id(u) = $userId RETURN n ORDER BY n.updatedAt DESC")
+    @Query("MATCH (n:Note)-[:CREATED_BY]->(u:User) WHERE id(u) = $userId " +
+           "OPTIONAL MATCH (n)-[r:REFERENCES]->(target:Note) " +
+           "RETURN n, collect(r), collect(target) ORDER BY n.updatedAt DESC")
     List<Note> findByCreatedByUserId(@Param("userId") Long userId);
     
     /**

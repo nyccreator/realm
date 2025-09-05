@@ -37,13 +37,13 @@ interface NoteState {
   // Actions for data operations
   loadNotes: () => Promise<void>;
   createNote: (noteData: CreateNoteRequest) => Promise<Note | null>;
-  updateNote: (noteId: string, updateData: UpdateNoteRequest) => Promise<Note | null>;
-  deleteNote: (noteId: string) => Promise<void>;
-  selectNote: (noteId: string) => Promise<void>;
+  updateNote: (noteId: string | number, updateData: UpdateNoteRequest) => Promise<Note | null>;
+  deleteNote: (noteId: string | number) => Promise<void>;
+  selectNote: (noteId: string | number) => Promise<void>;
   
   // Link operations
-  createLink: (sourceNoteId: string, linkData: CreateNoteLinkRequest) => Promise<NoteLink | null>;
-  removeLink: (linkId: string) => Promise<void>;
+  createLink: (sourceNoteId: string | number, linkData: CreateNoteLinkRequest) => Promise<NoteLink | null>;
+  removeLink: (linkId: string | number) => Promise<void>;
   
   // Search and filter operations
   searchNotes: (query: string) => Promise<void>;
@@ -59,7 +59,7 @@ interface NoteState {
   setError: (error: string | null) => void;
   clearError: () => void;
   toggleSidebar: () => void;
-  toggleNoteSelection: (noteId: string) => void;
+  toggleNoteSelection: (noteId: string | number) => void;
   clearSelection: () => void;
   
   // Tag operations
@@ -69,6 +69,9 @@ interface NoteState {
 }
 
 const noteService = NoteService.getInstance();
+
+// Utility function to normalize ID comparisons (handle string/number mismatch)
+const normalizeId = (id: string | number): string => String(id);
 
 export const useNoteStore = create<NoteState>()(
   devtools(
@@ -139,12 +142,12 @@ export const useNoteStore = create<NoteState>()(
           const { notes, currentNote } = get();
           
           const updatedNotes = notes.map(note => 
-            note.id === noteId ? updatedNote : note
+            normalizeId(note.id) === normalizeId(noteId) ? updatedNote : note
           );
           
           set({ 
             notes: updatedNotes,
-            currentNote: currentNote?.id === noteId ? updatedNote : currentNote,
+            currentNote: currentNote && normalizeId(currentNote.id) === normalizeId(noteId) ? updatedNote : currentNote,
             isSaving: false,
             editorState: {
               ...get().editorState,
@@ -168,13 +171,13 @@ export const useNoteStore = create<NoteState>()(
           await noteService.deleteNote(noteId);
           const { notes, currentNote, selectedNotes } = get();
           
-          const updatedNotes = notes.filter(note => note.id !== noteId);
+          const updatedNotes = notes.filter(note => normalizeId(note.id) !== normalizeId(noteId));
           const newSelectedNotes = new Set(selectedNotes);
-          newSelectedNotes.delete(noteId);
+          newSelectedNotes.delete(normalizeId(noteId));
           
           set({ 
             notes: updatedNotes,
-            currentNote: currentNote?.id === noteId ? null : currentNote,
+            currentNote: currentNote && normalizeId(currentNote.id) === normalizeId(noteId) ? null : currentNote,
             selectedNotes: newSelectedNotes,
             isLoading: false 
           });
@@ -216,7 +219,7 @@ export const useNoteStore = create<NoteState>()(
           
           // Update the current note if it's the source note
           const { currentNote } = get();
-          if (currentNote?.id === sourceNoteId) {
+          if (currentNote && normalizeId(currentNote.id) === normalizeId(sourceNoteId)) {
             const updatedNote = {
               ...currentNote,
               outgoingLinks: [...(currentNote.outgoingLinks || []), newLink]
@@ -324,7 +327,7 @@ export const useNoteStore = create<NoteState>()(
         });
 
         try {
-          await noteService.autoSaveNote(currentNote.id, {
+          await noteService.autoSaveNote(String(currentNote.id), {
             title: currentNote.title,
             content: currentNote.content,
             tags: currentNote.tags
@@ -363,10 +366,11 @@ export const useNoteStore = create<NoteState>()(
         const { selectedNotes } = get();
         const newSelection = new Set(selectedNotes);
         
-        if (newSelection.has(noteId)) {
-          newSelection.delete(noteId);
+        const normalizedId = normalizeId(noteId);
+        if (newSelection.has(normalizedId)) {
+          newSelection.delete(normalizedId);
         } else {
-          newSelection.add(noteId);
+          newSelection.add(normalizedId);
         }
         
         set({ selectedNotes: newSelection });
@@ -394,7 +398,7 @@ export const useNoteStore = create<NoteState>()(
 
         const updatedTags = [...currentNote.tags, tag];
         try {
-          const updatedNote = await noteService.updateNote(currentNote.id, {
+          const updatedNote = await noteService.updateNote(String(currentNote.id), {
             tags: updatedTags
           });
           set({ currentNote: updatedNote });
@@ -411,7 +415,7 @@ export const useNoteStore = create<NoteState>()(
 
         const updatedTags = currentNote.tags.filter(t => t !== tag);
         try {
-          const updatedNote = await noteService.updateNote(currentNote.id, {
+          const updatedNote = await noteService.updateNote(String(currentNote.id), {
             tags: updatedTags
           });
           set({ currentNote: updatedNote });

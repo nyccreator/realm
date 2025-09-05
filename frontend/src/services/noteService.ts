@@ -28,6 +28,13 @@ class NoteService {
   }
 
   /**
+   * Normalize ID to string for API calls
+   */
+  private normalizeId(id: string | number): string {
+    return String(id);
+  }
+
+  /**
    * Get authorization headers for API requests
    */
   private getAuthHeaders(): Record<string, string> {
@@ -84,8 +91,8 @@ class NoteService {
   /**
    * Get a specific note by ID
    */
-  async getNote(noteId: string): Promise<Note> {
-    const response = await fetch(`${NOTES_BASE_URL}/${noteId}`, {
+  async getNote(noteId: string | number): Promise<Note> {
+    const response = await fetch(`${NOTES_BASE_URL}/${this.normalizeId(noteId)}`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
@@ -96,8 +103,8 @@ class NoteService {
   /**
    * Update an existing note
    */
-  async updateNote(noteId: string, updateData: UpdateNoteRequest): Promise<Note> {
-    const response = await fetch(`${NOTES_BASE_URL}/${noteId}`, {
+  async updateNote(noteId: string | number, updateData: UpdateNoteRequest): Promise<Note> {
+    const response = await fetch(`${NOTES_BASE_URL}/${this.normalizeId(noteId)}`, {
       method: 'PUT',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(updateData),
@@ -109,8 +116,8 @@ class NoteService {
   /**
    * Delete a note
    */
-  async deleteNote(noteId: string): Promise<void> {
-    const response = await fetch(`${NOTES_BASE_URL}/${noteId}`, {
+  async deleteNote(noteId: string | number): Promise<void> {
+    const response = await fetch(`${NOTES_BASE_URL}/${this.normalizeId(noteId)}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
     });
@@ -124,8 +131,8 @@ class NoteService {
   /**
    * Create a link between two notes
    */
-  async createLink(sourceNoteId: string, linkData: CreateNoteLinkRequest): Promise<NoteLink> {
-    const response = await fetch(`${NOTES_BASE_URL}/${sourceNoteId}/links`, {
+  async createLink(sourceNoteId: string | number, linkData: CreateNoteLinkRequest): Promise<NoteLink> {
+    const response = await fetch(`${NOTES_BASE_URL}/${this.normalizeId(sourceNoteId)}/links`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
       body: JSON.stringify(linkData),
@@ -137,8 +144,8 @@ class NoteService {
   /**
    * Remove a link between notes
    */
-  async removeLink(linkId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/links/${linkId}`, {
+  async removeLink(linkId: string | number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/links/${this.normalizeId(linkId)}`, {
       method: 'DELETE',
       headers: this.getAuthHeaders(),
     });
@@ -152,8 +159,8 @@ class NoteService {
   /**
    * Get backlinks for a note (notes that link to this note)
    */
-  async getBacklinks(noteId: string): Promise<Note[]> {
-    const response = await fetch(`${NOTES_BASE_URL}/${noteId}/backlinks`, {
+  async getBacklinks(noteId: string | number): Promise<Note[]> {
+    const response = await fetch(`${NOTES_BASE_URL}/${this.normalizeId(noteId)}/backlinks`, {
       method: 'GET',
       headers: this.getAuthHeaders(),
     });
@@ -211,7 +218,7 @@ class NoteService {
   /**
    * Auto-save note changes (used with debouncing)
    */
-  async autoSaveNote(noteId: string, updateData: UpdateNoteRequest): Promise<Note> {
+  async autoSaveNote(noteId: string | number, updateData: UpdateNoteRequest): Promise<Note> {
     // Use the same update endpoint but could add special handling for auto-save
     return this.updateNote(noteId, updateData);
   }
@@ -219,11 +226,11 @@ class NoteService {
   /**
    * Bulk operations for multiple notes
    */
-  async bulkDeleteNotes(noteIds: string[]): Promise<void> {
+  async bulkDeleteNotes(noteIds: (string | number)[]): Promise<void> {
     const response = await fetch(`${NOTES_BASE_URL}/bulk/delete`, {
       method: 'POST',
       headers: this.getAuthHeaders(),
-      body: JSON.stringify({ noteIds }),
+      body: JSON.stringify({ noteIds: noteIds.map(id => this.normalizeId(id)) }),
     });
 
     if (!response.ok) {

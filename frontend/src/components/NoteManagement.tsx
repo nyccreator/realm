@@ -32,14 +32,29 @@ export const NoteManagement: React.FC = () => {
   }, [loadNotes]);
 
   const handleNoteSelect = async (note: Note) => {
-    await selectNote(note.id);
+    await selectNote(String(note.id));
     setActiveTab('editor'); // Switch to editor when selecting a note
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={toggleSidebar}
+        />
+      )}
+      
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 ease-in-out overflow-hidden border-r border-gray-200 bg-white`}>
+      <div className={`
+        ${sidebarOpen ? 'w-80' : 'w-0'} 
+        lg:relative fixed inset-y-0 left-0 z-50
+        transition-all duration-300 ease-in-out overflow-hidden 
+        border-r border-gray-200 bg-white
+        lg:w-80 lg:block
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
         {sidebarOpen && (
           <div className="h-full flex flex-col">
             {/* Search */}
@@ -63,7 +78,7 @@ export const NoteManagement: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-0">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 px-4 py-3">
           <div className="flex items-center justify-between">

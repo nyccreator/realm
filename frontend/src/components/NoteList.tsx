@@ -7,7 +7,7 @@ import {useNoteStore} from '../stores/noteStore';
 
 interface NoteListProps {
   onNoteSelect: (note: Note) => void;
-  selectedNoteId?: string | null;
+  selectedNoteId?: string | number | null;
 }
 
 export const NoteList: React.FC<NoteListProps> = ({ 
@@ -296,7 +296,7 @@ export const NoteList: React.FC<NoteListProps> = ({
                 key={note.id}
                 onClick={() => onNoteSelect(note)}
                 className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedNoteId === note.id ? 'bg-blue-50 border-r-2 border-blue-600' : ''
+                  String(selectedNoteId) === String(note.id) ? 'bg-blue-50 border-r-2 border-blue-600' : ''
                 }`}
               >
                 <div className="flex items-start justify-between">
@@ -332,7 +332,7 @@ export const NoteList: React.FC<NoteListProps> = ({
                   </div>
                   
                   <button
-                    onClick={(e) => handleDeleteNote(note.id, e)}
+                    onClick={(e) => handleDeleteNote(String(note.id), e)}
                     className="ml-2 p-1 text-gray-400 hover:text-red-600 rounded transition-colors opacity-0 group-hover:opacity-100"
                     title="Delete note"
                   >

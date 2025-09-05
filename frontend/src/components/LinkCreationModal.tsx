@@ -73,7 +73,7 @@ export const LinkCreationModal: React.FC<LinkCreationModalProps> = ({
 
     setIsCreating(true);
     try {
-      await onCreateLink(selectedNote.id, linkContext.trim() || undefined);
+      await onCreateLink(String(selectedNote.id), linkContext.trim() || undefined);
     } finally {
       setIsCreating(false);
     }

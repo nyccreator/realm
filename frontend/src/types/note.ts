@@ -2,14 +2,14 @@
 // TypeScript interfaces for notes, links, and tags
 
 export interface Note {
-  id: string;
+  id: string | number; // Handle both string and Long from backend
   title: string;
   content: string; // Rich text JSON from TipTap editor
   tags: string[];
   createdAt: string; // ISO string
   updatedAt: string; // ISO string
   createdBy: {
-    id: string;
+    id: string | number; // Handle both string and Long from backend
     displayName: string;
     email: string;
   };
@@ -18,14 +18,14 @@ export interface Note {
 }
 
 export interface NoteLink {
-  id: string;
-  sourceNoteId: string;
-  targetNoteId: string;
+  id: string | number; // Handle both string and Long from backend
+  sourceNoteId: string | number;
+  targetNoteId: string | number;
   context?: string; // Optional context/description for the link
   type?: string; // Link type (default: 'references')
   createdAt: string;
   createdBy: {
-    id: string;
+    id: string | number; // Handle both string and Long from backend
     displayName: string;
   };
   targetNote?: Note; // Populated for outgoing links
@@ -45,7 +45,7 @@ export interface UpdateNoteRequest {
 }
 
 export interface CreateNoteLinkRequest {
-  targetNoteId: string;
+  targetNoteId: string | number;
   context?: string;
   type?: string;
 }

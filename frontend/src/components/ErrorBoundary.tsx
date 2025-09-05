@@ -31,16 +31,27 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Safe console logging to prevent logging-related errors
+    if (typeof console !== 'undefined' && console.error) {
+      try {
+        console.error('ErrorBoundary caught an error:', error, errorInfo);
+      } catch (logError) {
+        // Ignore logging errors to prevent cascading issues
+      }
+    }
     
     this.setState({
       error,
       errorInfo,
     });
 
-    // Call optional error handler
+    // Call optional error handler with error protection
     if (this.props.onError) {
-      this.props.onError(error, errorInfo);
+      try {
+        this.props.onError(error, errorInfo);
+      } catch (handlerError) {
+        // Prevent error handler from causing additional issues
+      }
     }
 
     // In production, you might want to log this to an error reporting service
@@ -170,4 +181,68 @@ export const ErrorBoundaryWrapper: React.FC<{
       {children}
     </ErrorBoundary>
   );
+};
+
+// Specialized error boundary for graph components
+export const GraphErrorBoundary: React.FC<{ children: ReactNode }> = ({ children }) => (
+  <ErrorBoundary
+    fallback={
+      <div className="h-full w-full flex items-center justify-center bg-gray-50">
+        <div className="text-center p-8 max-w-md mx-auto">
+          <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-3-3v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Graph Visualization Error</h3>
+          <p className="text-gray-600 mb-4">The knowledge graph visualization encountered an error. This might be due to data loading issues or rendering problems.</p>
+          <div className="space-y-2">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            >
+              Reload Graph
+            </button>
+            <button
+              onClick={() => window.history.back()}
+              className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+    onError={(error, errorInfo) => {
+      // Safe error logging for graph components
+      if (typeof console !== 'undefined' && console.error) {
+        try {
+          console.error('Graph visualization error:', {
+            message: error.message,
+            name: error.name,
+            componentStack: errorInfo.componentStack,
+          });
+        } catch (logError) {
+          // Ignore logging errors
+        }
+      }
+    }}
+  >
+    {children}
+  </ErrorBoundary>
+);
+
+// HOC for wrapping components with error boundaries
+export const withErrorBoundary = <P extends object>(
+  Component: React.ComponentType<P>,
+  fallback?: ReactNode
+) => {
+  const WrappedComponent = (props: P) => (
+    <ErrorBoundary fallback={fallback}>
+      <Component {...props} />
+    </ErrorBoundary>
+  );
+  
+  WrappedComponent.displayName = `withErrorBoundary(${Component.displayName || Component.name})`;
+  return WrappedComponent;
 };

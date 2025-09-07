@@ -1,0 +1,376 @@
+import React, { useState, useCallback, useEffect } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../contexts/AuthContext';
+import { useNoteStore } from '../stores/noteStore';
+import { Note } from '../types/note';
+
+// Import new components (will create these)
+import { PremiumSidebar } from './redesigned/PremiumSidebar';
+import { GraphVisualizationPro } from './redesigned/GraphVisualizationPro';
+import { RichTextEditor } from './redesigned/RichTextEditor';
+import { CommandPalette } from './redesigned/CommandPalette';
+import { BacklinksPanel } from './redesigned/BacklinksPanel';
+import { QueryProvider } from '../providers/QueryProvider';
+
+type ViewMode = 'editor' | 'graph' | 'split';
+
+interface RealmDashboardProps {}
+
+export const RealmDashboard: React.FC<RealmDashboardProps> = () => {
+  const { user } = useAuth();
+  const { 
+    currentNote, 
+    selectNote, 
+    error, 
+    isLoading,
+    loadNotes 
+  } = useNoteStore();
+
+  const [viewMode, setViewMode] = useState<ViewMode>('editor');
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    loadNotes();
+  }, [loadNotes]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Command palette: Cmd+K / Ctrl+K
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+      
+      // View mode shortcuts
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey) {
+        switch (e.key) {
+          case 'E':
+            e.preventDefault();
+            setViewMode('editor');
+            break;
+          case 'G':
+            e.preventDefault();
+            setViewMode('graph');
+            break;
+          case 'S':
+            e.preventDefault();
+            setViewMode('split');
+            break;
+        }
+      }
+      
+      // Escape to close command palette
+      if (e.key === 'Escape') {
+        setCommandPaletteOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleNoteSelect = useCallback(async (note: Note) => {
+    await selectNote(String(note.id));
+    if (viewMode === 'graph') {
+      setViewMode('split');
+    }
+  }, [selectNote, viewMode]);
+
+  return (
+    <QueryProvider>
+      <div className="h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 overflow-hidden">
+        {/* Beautiful Header Bar */}
+        <motion.header 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="h-14 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 flex items-center justify-between px-6 relative z-50"
+        >
+          <div className="flex items-center space-x-4">
+            <motion.div 
+              className="flex items-center space-x-3"
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-sm">R</span>
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-slate-900">Realm</h1>
+                <p className="text-xs text-slate-500 -mt-1">Personal Knowledge Graph</p>
+              </div>
+            </motion.div>
+            
+            {currentNote && (
+              <motion.div 
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="text-slate-600 text-sm"
+              >
+                <span className="text-slate-400">/</span> {currentNote.title}
+              </motion.div>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-3">
+            {/* View Mode Selector */}
+            <div className="flex bg-slate-100 rounded-lg p-1">
+              {[
+                { mode: 'editor', icon: '📝', label: 'Editor' },
+                { mode: 'graph', icon: '🕸️', label: 'Graph' },
+                { mode: 'split', icon: '⚡', label: 'Split' }
+              ].map(({ mode, icon, label }) => (
+                <motion.button
+                  key={mode}
+                  onClick={() => setViewMode(mode as ViewMode)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                    viewMode === mode
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <span className="mr-1">{icon}</span>
+                  {label}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Command Palette Trigger */}
+            <motion.button
+              onClick={() => setCommandPaletteOpen(true)}
+              className="flex items-center space-x-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600 hover:text-slate-900 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <span className="text-sm">⌘K</span>
+            </motion.button>
+
+            {/* User Menu */}
+            <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <div className="w-6 h-6 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-medium">
+                  {user?.displayName?.[0]?.toUpperCase() || 'U'}
+                </span>
+              </div>
+              <span>{user?.displayName}</span>
+            </div>
+          </div>
+        </motion.header>
+
+        {/* Main Layout */}
+        <div className="h-[calc(100vh-3.5rem)]">
+          <PanelGroup direction="horizontal">
+            {/* Sidebar Panel */}
+            <Panel 
+              defaultSize={25} 
+              minSize={20} 
+              maxSize={40}
+              collapsible
+              onCollapse={() => setSidebarCollapsed(true)}
+              onExpand={() => setSidebarCollapsed(false)}
+            >
+              <motion.div 
+                className="h-full"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                <PremiumSidebar 
+                  onNoteSelect={handleNoteSelect}
+                  selectedNoteId={currentNote?.id}
+                  collapsed={sidebarCollapsed}
+                />
+              </motion.div>
+            </Panel>
+
+            <PanelResizeHandle className="w-1 bg-slate-200/60 hover:bg-indigo-300 transition-colors" />
+
+            {/* Main Content Area */}
+            <Panel minSize={30}>
+              <PanelGroup direction={viewMode === 'split' ? 'horizontal' : 'vertical'}>
+                {/* Editor Panel */}
+                {(viewMode === 'editor' || viewMode === 'split') && (
+                  <>
+                    <Panel minSize={viewMode === 'split' ? 40 : 100}>
+                      <motion.div 
+                        className="h-full"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: viewMode === 'split' ? 0.2 : 0.1 }}
+                      >
+                        {currentNote ? (
+                          <RichTextEditor note={currentNote} />
+                        ) : (
+                          <div className="h-full flex items-center justify-center bg-white">
+                            <EmptyStateEditor onOpenPalette={() => setCommandPaletteOpen(true)} />
+                          </div>
+                        )}
+                      </motion.div>
+                    </Panel>
+                    
+                    {viewMode === 'split' && (
+                      <PanelResizeHandle className="h-1 bg-slate-200/60 hover:bg-indigo-300 transition-colors" />
+                    )}
+                  </>
+                )}
+
+                {/* Graph Panel */}
+                {(viewMode === 'graph' || viewMode === 'split') && (
+                  <Panel minSize={viewMode === 'split' ? 40 : 100}>
+                    <motion.div 
+                      className="h-full"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: viewMode === 'split' ? 0.3 : 0.1 }}
+                    >
+                      <GraphVisualizationPro 
+                        selectedNoteId={currentNote?.id ? String(currentNote.id) : undefined}
+                        onNodeSelect={handleNoteSelect}
+                      />
+                    </motion.div>
+                  </Panel>
+                )}
+              </PanelGroup>
+            </Panel>
+
+            {/* Backlinks Panel */}
+            {currentNote && (
+              <>
+                <PanelResizeHandle className="w-1 bg-slate-200/60 hover:bg-indigo-300 transition-colors" />
+                <Panel defaultSize={20} minSize={15} maxSize={30} collapsible>
+                  <motion.div 
+                    className="h-full"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <BacklinksPanel 
+                      note={currentNote}
+                      onNoteSelect={handleNoteSelect}
+                    />
+                  </motion.div>
+                </Panel>
+              </>
+            )}
+          </PanelGroup>
+        </div>
+
+        {/* Error Toast */}
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 100 }}
+              className="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-3 rounded-lg shadow-lg z-50"
+            >
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Loading Overlay */}
+        <AnimatePresence>
+          {isLoading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-50"
+            >
+              <div className="text-center">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"
+                />
+                <p className="text-slate-600">Loading...</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Command Palette */}
+        <CommandPalette 
+          open={commandPaletteOpen}
+          onClose={() => setCommandPaletteOpen(false)}
+          onNoteSelect={handleNoteSelect}
+        />
+
+        {/* Status Bar */}
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="fixed bottom-0 left-0 right-0 h-6 bg-slate-900/90 backdrop-blur-xl text-slate-300 text-xs flex items-center justify-between px-4 z-40"
+        >
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              <span>Connected</span>
+            </div>
+            {currentNote && (
+              <span>
+                {currentNote.outgoingLinks?.length || 0} links • {currentNote.tags.length} tags
+              </span>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <span>{viewMode.charAt(0).toUpperCase() + viewMode.slice(1)} Mode</span>
+            <span>•</span>
+            <span>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+        </motion.div>
+      </div>
+    </QueryProvider>
+  );
+};
+
+// Empty state component for when no note is selected
+const EmptyStateEditor: React.FC<{ onOpenPalette: () => void }> = ({ onOpenPalette }) => (
+  <motion.div 
+    className="text-center max-w-lg mx-auto"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 }}
+  >
+    <motion.div 
+      className="w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-6"
+      whileHover={{ scale: 1.05, rotate: 2 }}
+    >
+      <span className="text-3xl">✨</span>
+    </motion.div>
+    
+    <h2 className="text-2xl font-bold text-slate-900 mb-3">
+      Welcome to Realm
+    </h2>
+    
+    <p className="text-slate-600 mb-8 leading-relaxed">
+      Your personal knowledge graph awaits. Create beautiful, interconnected notes 
+      that grow into a living web of ideas.
+    </p>
+
+    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+      <motion.button
+        onClick={onOpenPalette}
+        className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium shadow-lg hover:shadow-xl transition-all"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <span className="mr-2">⌘</span>
+        Quick Actions
+      </motion.button>
+      
+      <motion.button
+        className="inline-flex items-center px-6 py-3 border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <span className="mr-2">📖</span>
+        Browse Notes
+      </motion.button>
+    </div>
+  </motion.div>
+);

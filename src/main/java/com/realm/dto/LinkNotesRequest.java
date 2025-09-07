@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public class LinkNotesRequest {
     
     @NotNull(message = "Target note ID is required")
-    private Long targetNoteId;
+    private String targetNoteId;
     
     @Pattern(regexp = "REFERENCES|SUPPORTS|CONTRADICTS|BUILDS_ON|RELATED_TO|INSPIRED_BY|CLARIFIES|QUESTION|ANSWER|EXAMPLE", 
              message = "Link type must be one of: REFERENCES, SUPPORTS, CONTRADICTS, BUILDS_ON, RELATED_TO, INSPIRED_BY, CLARIFIES, QUESTION, ANSWER, EXAMPLE")

@@ -35,13 +35,11 @@ class NoteService {
   }
 
   /**
-   * Get authorization headers for API requests
+   * Get headers for API requests (session-based auth)
    */
-  private getAuthHeaders(): Record<string, string> {
-    const token = this.authService.getStoredAccessToken();
+  private getHeaders(): Record<string, string> {
     return {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
+      'Content-Type': 'application/json'
     };
   }
 
@@ -69,7 +67,8 @@ class NoteService {
   async createNote(noteData: CreateNoteRequest): Promise<Note> {
     const response = await fetch(NOTES_BASE_URL, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
       body: JSON.stringify(noteData),
     });
 
@@ -82,7 +81,8 @@ class NoteService {
   async getNotes(): Promise<Note[]> {
     const response = await fetch(NOTES_BASE_URL, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<Note[]>(response);
@@ -94,7 +94,8 @@ class NoteService {
   async getNote(noteId: string | number): Promise<Note> {
     const response = await fetch(`${NOTES_BASE_URL}/${this.normalizeId(noteId)}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<Note>(response);
@@ -106,7 +107,8 @@ class NoteService {
   async updateNote(noteId: string | number, updateData: UpdateNoteRequest): Promise<Note> {
     const response = await fetch(`${NOTES_BASE_URL}/${this.normalizeId(noteId)}`, {
       method: 'PUT',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
       body: JSON.stringify(updateData),
     });
 
@@ -119,7 +121,8 @@ class NoteService {
   async deleteNote(noteId: string | number): Promise<void> {
     const response = await fetch(`${NOTES_BASE_URL}/${this.normalizeId(noteId)}`, {
       method: 'DELETE',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     if (!response.ok) {
@@ -134,7 +137,8 @@ class NoteService {
   async createLink(sourceNoteId: string | number, linkData: CreateNoteLinkRequest): Promise<NoteLink> {
     const response = await fetch(`${NOTES_BASE_URL}/${this.normalizeId(sourceNoteId)}/links`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
       body: JSON.stringify(linkData),
     });
 
@@ -147,7 +151,8 @@ class NoteService {
   async removeLink(linkId: string | number): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/links/${this.normalizeId(linkId)}`, {
       method: 'DELETE',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     if (!response.ok) {
@@ -162,7 +167,8 @@ class NoteService {
   async getBacklinks(noteId: string | number): Promise<Note[]> {
     const response = await fetch(`${NOTES_BASE_URL}/${this.normalizeId(noteId)}/backlinks`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<Note[]>(response);
@@ -191,7 +197,8 @@ class NoteService {
 
     const response = await fetch(`${NOTES_BASE_URL}/search?${queryParams}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     // Handle the response as a simple array of notes for now
@@ -209,7 +216,8 @@ class NoteService {
   async getTags(): Promise<string[]> {
     const response = await fetch(`${API_BASE_URL}/tags`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<string[]>(response);
@@ -229,7 +237,8 @@ class NoteService {
   async bulkDeleteNotes(noteIds: (string | number)[]): Promise<void> {
     const response = await fetch(`${NOTES_BASE_URL}/bulk/delete`, {
       method: 'POST',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
       body: JSON.stringify({ noteIds: noteIds.map(id => this.normalizeId(id)) }),
     });
 
@@ -250,7 +259,8 @@ class NoteService {
   }> {
     const response = await fetch(`${NOTES_BASE_URL}/stats`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<{

@@ -1,10 +1,10 @@
 // Registration Form Component for Section 3.1 - Single-User Authentication
 // Provides user registration with validation and error handling
 
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, {useState} from 'react';
 
 interface RegisterFormProps {
+  onRegister: (email: string, password: string, displayName: string) => Promise<void>;
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
 }
@@ -25,10 +25,10 @@ interface FormErrors {
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ 
+  onRegister,
   onSuccess, 
   onSwitchToLogin 
 }) => {
-  const { register, loading } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -104,7 +104,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     setErrors({});
 
     try {
-      await register(formData.email, formData.password, formData.displayName);
+      await onRegister(formData.email, formData.password, formData.displayName);
       onSuccess?.();
     } catch (error) {
       setErrors({
@@ -121,7 +121,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     }
   };
 
-  const isFormDisabled = loading || isSubmitting;
+  const isFormDisabled = isSubmitting;
 
   return (
     <div className="w-full max-w-md mx-auto">

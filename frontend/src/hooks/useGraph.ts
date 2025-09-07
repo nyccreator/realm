@@ -4,6 +4,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useCallback, useState} from 'react';
 import GraphService from '../services/graphService';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {GraphData, GraphSearchParams, SubgraphParams} from '../types/graph';
 
 // Query keys for React Query

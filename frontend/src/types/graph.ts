@@ -25,7 +25,10 @@ export interface GraphEdge {
   type?: string; // Relationship type
   context?: string; // Link context
   strength?: number; // Relationship strength (0-1)
+  color?: string; // Edge color
+  width?: number; // Edge width
   highlighted?: boolean;
+  bidirectional?: boolean;
 }
 
 export interface GraphData {

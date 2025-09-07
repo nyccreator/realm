@@ -34,7 +34,7 @@ public class GraphVisualizationService {
     /**
      * Get graph data for visualization with all user's notes and their relationships
      */
-    public GraphData getGraphData(Long userId, Integer maxNodes) {
+    public GraphData getGraphData(String userId, Integer maxNodes) {
         log.debug("Fetching graph data for user {} with max nodes {}", userId, maxNodes);
         
         // Use repository to get all user's notes
@@ -106,19 +106,18 @@ public class GraphVisualizationService {
     /**
      * Get a subgraph focused on a specific node and its connections
      */
-    public GraphData getSubgraph(Long userId, String nodeId, Integer depth) {
+    public GraphData getSubgraph(String userId, String nodeId, Integer depth) {
         log.debug("Fetching subgraph for user {} centered on node {} with depth {}", 
                  userId, nodeId, depth);
         
         try {
-            Long noteId = Long.parseLong(nodeId);
             int maxDepth = depth != null ? Math.min(depth, 3) : 2;
             
             // Use existing repository method to find related notes
-            List<Note> relatedNotes = noteRepository.findRelatedNotes(noteId, userId, maxDepth, 50);
+            List<Note> relatedNotes = noteRepository.findRelatedNotes(nodeId, userId, maxDepth, 50);
             
             // Find the center note
-            Optional<Note> centerNote = noteRepository.findById(noteId);
+            Optional<Note> centerNote = noteRepository.findById(nodeId);
             if (centerNote.isEmpty()) {
                 return GraphData.builder()
                     .nodes(new ArrayList<>())
@@ -192,8 +191,8 @@ public class GraphVisualizationService {
             
             return graphData;
             
-        } catch (NumberFormatException e) {
-            log.error("Invalid nodeId format: {}", nodeId);
+        } catch (Exception e) {
+            log.error("Error generating subgraph for nodeId {}: {}", nodeId, e.getMessage());
             return GraphData.builder()
                 .nodes(new ArrayList<>())
                 .edges(new ArrayList<>())
@@ -205,7 +204,7 @@ public class GraphVisualizationService {
     /**
      * Search for nodes matching a query string
      */
-    public List<GraphNode> searchNodes(Long userId, String query) {
+    public List<GraphNode> searchNodes(String userId, String query) {
         log.debug("Searching nodes for user {} with query '{}'", userId, query);
         
         if (query == null || query.trim().isEmpty()) {
@@ -394,7 +393,7 @@ public class GraphVisualizationService {
     /**
      * Get connection count for a specific node (legacy method for compatibility)
      */
-    private int getConnectionCount(String nodeId, Long userId) {
+    private int getConnectionCount(String nodeId, String userId) {
         // For now, return 0 for simplicity - this can be enhanced later
         return 0;
     }

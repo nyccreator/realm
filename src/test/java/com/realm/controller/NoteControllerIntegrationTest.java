@@ -5,7 +5,6 @@ import com.realm.model.Note;
 import com.realm.model.User;
 import com.realm.repository.NoteRepository;
 import com.realm.repository.UserRepository;
-import com.realm.service.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +12,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebM
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,8 +50,7 @@ public class NoteControllerIntegrationTest {
     @Autowired
     private NoteRepository noteRepository;
     
-    @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    // JwtTokenProvider removed - using Redis session-based authentication
     
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -73,8 +72,8 @@ public class NoteControllerIntegrationTest {
                 .build();
         testUser = userRepository.save(testUser);
         
-        // Generate JWT token
-        authToken = jwtTokenProvider.generateToken(testUser);
+        // Session-based authentication - token not needed for testing
+        authToken = "not-used-for-session-auth";
     }
     
     // ============================================================================
@@ -82,6 +81,7 @@ public class NoteControllerIntegrationTest {
     // ============================================================================
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldCreateNoteSuccessfully() throws Exception {
         // Given
         Map<String, Object> createRequest = Map.of(
@@ -91,10 +91,10 @@ public class NoteControllerIntegrationTest {
         );
         
         // When & Then
-        mockMvc.perform(post("/api/notes")
-                .header("Authorization", "Bearer " + authToken)
+        mockMvc.perform(post("/api/notes"))
+                // Session-based auth - use Spring Security's test annotations
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(createRequest)))
+                .content(objectMapper.writeValueAsString(createRequest))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.title").value("Test Note"))
@@ -108,6 +108,7 @@ public class NoteControllerIntegrationTest {
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldGetAllNotesForUser() throws Exception {
         // Given
         Note note1 = Note.builder()
@@ -125,8 +126,8 @@ public class NoteControllerIntegrationTest {
         noteRepository.save(note2);
         
         // When & Then
-        mockMvc.perform(get("/api/notes")
-                .header("Authorization", "Bearer " + authToken))
+        mockMvc.perform(get("/api/notes"))
+                // Session-based auth - use Spring Security's test annotations
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -136,6 +137,7 @@ public class NoteControllerIntegrationTest {
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldGetSpecificNote() throws Exception {
         // Given
         Note note = Note.builder()
@@ -146,8 +148,8 @@ public class NoteControllerIntegrationTest {
         note = noteRepository.save(note);
         
         // When & Then
-        mockMvc.perform(get("/api/notes/{noteId}", note.getId())
-                .header("Authorization", "Bearer " + authToken))
+        mockMvc.perform(get("/api/notes/{noteId}", note.getId()))
+                // Session-based auth - use Spring Security's test annotations
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(note.getId()))
@@ -156,6 +158,7 @@ public class NoteControllerIntegrationTest {
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldUpdateNoteSuccessfully() throws Exception {
         // Given
         Note note = Note.builder()
@@ -172,10 +175,10 @@ public class NoteControllerIntegrationTest {
         );
         
         // When & Then
-        mockMvc.perform(put("/api/notes/{noteId}", note.getId())
-                .header("Authorization", "Bearer " + authToken)
+        mockMvc.perform(put("/api/notes/{noteId}", note.getId()))
+                // Session-based auth - use Spring Security's test annotations
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(updateRequest)))
+                .content(objectMapper.writeValueAsString(updateRequest))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.title").value("Updated Title"))
@@ -184,6 +187,7 @@ public class NoteControllerIntegrationTest {
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldDeleteNoteSuccessfully() throws Exception {
         // Given
         Note note = Note.builder()
@@ -194,14 +198,14 @@ public class NoteControllerIntegrationTest {
         note = noteRepository.save(note);
         
         // When & Then
-        mockMvc.perform(delete("/api/notes/{noteId}", note.getId())
-                .header("Authorization", "Bearer " + authToken))
+        mockMvc.perform(delete("/api/notes/{noteId}", note.getId()))
+                // Session-based auth - use Spring Security's test annotations
                 .andDo(print())
                 .andExpect(status().isNoContent());
         
         // Verify note is deleted
-        mockMvc.perform(get("/api/notes/{noteId}", note.getId())
-                .header("Authorization", "Bearer " + authToken))
+        mockMvc.perform(get("/api/notes/{noteId}", note.getId()))
+                // Session-based auth - use Spring Security's test annotations
                 .andExpect(status().isNotFound());
     }
     
@@ -210,6 +214,7 @@ public class NoteControllerIntegrationTest {
     // ============================================================================
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldLinkNotesSuccessfully() throws Exception {
         // Given
         Note sourceNote = Note.builder()
@@ -234,7 +239,7 @@ public class NoteControllerIntegrationTest {
         
         // When & Then
         mockMvc.perform(post("/api/notes/{noteId}/links", sourceNote.getId())
-                .header("Authorization", "Bearer " + authToken)
+                // Session-based auth - use Spring Security's test annotations
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(linkRequest)))
                 .andDo(print())
@@ -246,6 +251,7 @@ public class NoteControllerIntegrationTest {
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldGetLinkedNotes() throws Exception {
         // Given - create notes with links through service layer
         Note sourceNote = Note.builder()
@@ -263,8 +269,8 @@ public class NoteControllerIntegrationTest {
         targetNote = noteRepository.save(targetNote);
         
         // When & Then
-        mockMvc.perform(get("/api/notes/{noteId}/links", sourceNote.getId())
-                .header("Authorization", "Bearer " + authToken))
+        mockMvc.perform(get("/api/notes/{noteId}/links", sourceNote.getId()))
+                // Session-based auth - use Spring Security's test annotations
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
@@ -275,6 +281,7 @@ public class NoteControllerIntegrationTest {
     // ============================================================================
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldSearchNotesSuccessfully() throws Exception {
         // Given
         Note note = Note.builder()
@@ -286,14 +293,15 @@ public class NoteControllerIntegrationTest {
         
         // When & Then
         mockMvc.perform(get("/api/notes/search")
-                .param("query", "Java")
-                .header("Authorization", "Bearer " + authToken))
+                .param("query", "Java"))
+                // Session-based auth - use Spring Security's test annotations
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldGetNotesByTag() throws Exception {
         // Given
         Note note = Note.builder()
@@ -305,14 +313,15 @@ public class NoteControllerIntegrationTest {
         noteRepository.save(note);
         
         // When & Then
-        mockMvc.perform(get("/api/notes/tags/{tag}", "programming")
-                .header("Authorization", "Bearer " + authToken))
+        mockMvc.perform(get("/api/notes/tags/{tag}", "programming"))
+                // Session-based auth - use Spring Security's test annotations
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldToggleFavoriteStatus() throws Exception {
         // Given
         Note note = Note.builder()
@@ -323,8 +332,8 @@ public class NoteControllerIntegrationTest {
         note = noteRepository.save(note);
         
         // When & Then
-        mockMvc.perform(post("/api/notes/{noteId}/favorite", note.getId())
-                .header("Authorization", "Bearer " + authToken))
+        mockMvc.perform(post("/api/notes/{noteId}/favorite", note.getId()))
+                // Session-based auth - use Spring Security's test annotations
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.isFavorite").value(true));
@@ -343,6 +352,7 @@ public class NoteControllerIntegrationTest {
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldReturn400WhenCreateRequestInvalid() throws Exception {
         // Given - invalid request with empty title
         Map<String, Object> invalidRequest = Map.of(
@@ -352,7 +362,7 @@ public class NoteControllerIntegrationTest {
         
         // When & Then
         mockMvc.perform(post("/api/notes")
-                .header("Authorization", "Bearer " + authToken)
+                // Session-based auth - use Spring Security's test annotations
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andDo(print())
@@ -362,27 +372,30 @@ public class NoteControllerIntegrationTest {
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldReturn404WhenNoteNotFound() throws Exception {
         // When & Then
-        mockMvc.perform(get("/api/notes/{noteId}", "non-existent-id")
-                .header("Authorization", "Bearer " + authToken))
+        mockMvc.perform(get("/api/notes/{noteId}", "non-existent-id"))
+                // Session-based auth - use Spring Security's test annotations
                 .andDo(print())
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").value("Note Not Found"));
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldReturn400WhenSearchQueryTooShort() throws Exception {
         // When & Then
         mockMvc.perform(get("/api/notes/search")
-                .param("query", "x")
-                .header("Authorization", "Bearer " + authToken))
+                .param("query", "x"))
+                // Session-based auth - use Spring Security's test annotations
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("Validation Error"));
     }
     
     @Test
+    @WithMockUser(username = "test@example.com")
     void shouldReturn400WhenLinkingNoteToItself() throws Exception {
         // Given
         Note note = Note.builder()
@@ -399,7 +412,7 @@ public class NoteControllerIntegrationTest {
         
         // When & Then
         mockMvc.perform(post("/api/notes/{noteId}/links", note.getId())
-                .header("Authorization", "Bearer " + authToken)
+                // Session-based auth - use Spring Security's test annotations
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(linkRequest)))
                 .andDo(print())

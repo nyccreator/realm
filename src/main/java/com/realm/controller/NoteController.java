@@ -78,7 +78,7 @@ public class NoteController {
      * @return The requested note
      */
     @GetMapping("/{noteId}")
-    public ResponseEntity<Note> getNote(@PathVariable Long noteId, 
+    public ResponseEntity<Note> getNote(@PathVariable String noteId, 
                                        @AuthenticationPrincipal User user) {
         log.debug("Getting note {} for user: {}", noteId, user.getId());
         
@@ -120,7 +120,7 @@ public class NoteController {
      * @return The updated note
      */
     @PutMapping("/{noteId}")
-    public ResponseEntity<Note> updateNote(@PathVariable Long noteId,
+    public ResponseEntity<Note> updateNote(@PathVariable String noteId,
                                          @RequestBody @Valid UpdateNoteRequest request,
                                          @AuthenticationPrincipal User user) {
         log.debug("Updating note {} for user: {}", noteId, user.getId());
@@ -145,7 +145,7 @@ public class NoteController {
      * @return No content response
      */
     @DeleteMapping("/{noteId}")
-    public ResponseEntity<Void> deleteNote(@PathVariable Long noteId,
+    public ResponseEntity<Void> deleteNote(@PathVariable String noteId,
                                          @AuthenticationPrincipal User user) {
         log.debug("Deleting note {} for user: {}", noteId, user.getId());
         
@@ -168,7 +168,7 @@ public class NoteController {
      * @return The updated source note with the new link
      */
     @PostMapping("/{noteId}/links")
-    public ResponseEntity<Note> linkNotes(@PathVariable Long noteId,
+    public ResponseEntity<Note> linkNotes(@PathVariable String noteId,
                                         @RequestBody @Valid LinkNotesRequest request,
                                         @AuthenticationPrincipal User user) {
         log.debug("Linking note {} to {} for user: {}", 
@@ -196,8 +196,8 @@ public class NoteController {
      * @return No content response
      */
     @DeleteMapping("/{noteId}/links/{linkId}")
-    public ResponseEntity<Void> removeLink(@PathVariable Long noteId,
-                                         @PathVariable Long linkId,
+    public ResponseEntity<Void> removeLink(@PathVariable String noteId,
+                                         @PathVariable String linkId,
                                          @AuthenticationPrincipal User user) {
         log.debug("Removing link {} from note {} for user: {}", 
                  linkId, noteId, user.getId());
@@ -217,7 +217,7 @@ public class NoteController {
      * @return List of linked notes
      */
     @GetMapping("/{noteId}/links")
-    public ResponseEntity<List<Note>> getLinkedNotes(@PathVariable Long noteId,
+    public ResponseEntity<List<Note>> getLinkedNotes(@PathVariable String noteId,
                                                    @AuthenticationPrincipal User user) {
         log.debug("Getting linked notes for note {} and user: {}", noteId, user.getId());
         
@@ -236,7 +236,7 @@ public class NoteController {
      * @return List of notes that link to the target note
      */
     @GetMapping("/{noteId}/backlinks")
-    public ResponseEntity<List<Note>> getBacklinks(@PathVariable Long noteId,
+    public ResponseEntity<List<Note>> getBacklinks(@PathVariable String noteId,
                                                  @AuthenticationPrincipal User user) {
         log.debug("Getting backlinks for note {} and user: {}", noteId, user.getId());
         
@@ -257,7 +257,7 @@ public class NoteController {
      * @return List of related notes
      */
     @GetMapping("/{noteId}/related")
-    public ResponseEntity<List<Note>> getRelatedNotes(@PathVariable Long noteId,
+    public ResponseEntity<List<Note>> getRelatedNotes(@PathVariable String noteId,
                                                     @RequestParam(defaultValue = "2") int depth,
                                                     @RequestParam(defaultValue = "20") int limit,
                                                     @AuthenticationPrincipal User user) {
@@ -379,7 +379,7 @@ public class NoteController {
      * @return The updated note
      */
     @PostMapping("/{noteId}/favorite")
-    public ResponseEntity<Note> toggleFavorite(@PathVariable Long noteId,
+    public ResponseEntity<Note> toggleFavorite(@PathVariable String noteId,
                                              @AuthenticationPrincipal User user) {
         log.debug("Toggling favorite status for note {} and user: {}", noteId, user.getId());
         
@@ -399,7 +399,7 @@ public class NoteController {
      * @return The updated note
      */
     @PatchMapping("/{noteId}/status")
-    public ResponseEntity<Note> updateStatus(@PathVariable Long noteId,
+    public ResponseEntity<Note> updateStatus(@PathVariable String noteId,
                                            @RequestBody Map<String, String> statusRequest,
                                            @AuthenticationPrincipal User user) {
         log.debug("Updating status for note {} for user: {}", noteId, user.getId());

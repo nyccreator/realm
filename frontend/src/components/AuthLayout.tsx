@@ -1,30 +1,27 @@
 // Authentication Layout Component for Section 3.1 - Single-User Authentication
 // Provides a unified layout for login and registration pages
 
-import React, { useState } from 'react';
-import { LoginForm } from './LoginForm';
-import { RegisterForm } from './RegisterForm';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, {useState} from 'react';
+import {LoginForm} from './LoginForm';
+import {RegisterForm} from './RegisterForm';
 
 type AuthMode = 'login' | 'register';
 
 interface AuthLayoutProps {
   initialMode?: AuthMode;
+  onLogin: (email: string, password: string) => Promise<void>;
+  onRegister: (email: string, password: string, displayName: string) => Promise<void>;
 }
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ 
-  initialMode = 'login' 
+  initialMode = 'login',
+  onLogin,
+  onRegister
 }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Get the intended destination from location state
-  const from = location.state?.from?.pathname || '/';
 
   const handleAuthSuccess = () => {
-    // Redirect to the intended destination or home
-    navigate(from, { replace: true });
+    // Navigation will be handled by the App component when user state changes
   };
 
   const switchToLogin = () => setMode('login');
@@ -63,6 +60,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
           {mode === 'login' ? (
             <div className="p-8">
               <LoginForm 
+                onLogin={onLogin}
                 onSuccess={handleAuthSuccess}
                 onSwitchToRegister={switchToRegister}
               />
@@ -70,6 +68,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
           ) : (
             <div className="p-8">
               <RegisterForm 
+                onRegister={onRegister}
                 onSuccess={handleAuthSuccess}
                 onSwitchToLogin={switchToLogin}
               />
@@ -101,7 +100,22 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({
   );
 };
 
-// Simple Auth Page Component that uses AuthLayout
+// Simple Auth Page Component that uses AuthLayout with useAuth
 export const AuthPage: React.FC = () => {
-  return <AuthLayout />;
+  const handleLogin = async (email: string, password: string) => {
+    // This will be handled by the forms themselves using useAuth
+    console.log('Login handled by form');
+  };
+
+  const handleRegister = async (email: string, password: string, displayName: string) => {
+    // This will be handled by the forms themselves using useAuth
+    console.log('Register handled by form');
+  };
+
+  return (
+    <AuthLayout 
+      onLogin={handleLogin}
+      onRegister={handleRegister}
+    />
+  );
 };

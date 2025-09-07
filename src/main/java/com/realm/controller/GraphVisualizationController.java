@@ -72,9 +72,6 @@ public class GraphVisualizationController {
                  user.getId(), nodeId, depth);
         
         try {
-            // Validate nodeId format
-            Long.parseLong(nodeId);
-            
             GraphData subgraph = graphService.getSubgraph(user.getId(), nodeId, depth);
             
             log.info("Successfully generated subgraph with {} nodes and {} edges for user {} centered on node {}", 
@@ -82,9 +79,6 @@ public class GraphVisualizationController {
             
             return ResponseEntity.ok(subgraph);
             
-        } catch (NumberFormatException e) {
-            log.warn("Invalid nodeId format for user {}: {}", user.getId(), nodeId);
-            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             log.error("Error generating subgraph for user {} and node {}: {}", 
                      user.getId(), nodeId, e.getMessage(), e);

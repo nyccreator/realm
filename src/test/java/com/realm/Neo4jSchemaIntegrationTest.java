@@ -1,12 +1,11 @@
 package com.realm;
 
-import com.realm.model.User;
 import com.realm.model.Note;
 import com.realm.model.NoteLink;
-import com.realm.repository.UserRepository;
+import com.realm.model.User;
 import com.realm.repository.NoteRepository;
+import com.realm.repository.UserRepository;
 import com.realm.service.AuthService;
-import com.realm.service.JwtTokenProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,15 +66,14 @@ public class Neo4jSchemaIntegrationTest {
     @Autowired
     private AuthService authService;
     
-    @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    // JwtTokenProvider removed - using Redis session-based authentication
     
     @Test
     public void testNeo4jConnection() {
         assertNotNull(userRepository, "UserRepository should be injected");
         assertNotNull(noteRepository, "NoteRepository should be injected");
         assertNotNull(authService, "AuthService should be injected");
-        assertNotNull(jwtTokenProvider, "JwtTokenProvider should be injected");
+        // JWT removed - using Redis session-based authentication
     }
     
     @Test
@@ -184,78 +182,63 @@ public class Neo4jSchemaIntegrationTest {
     
     @Test
     public void testAuthenticationService() {
-        // Test user registration
-        AuthService.AuthResult registerResult = authService.registerUser(
+        // Test user registration (using session-based authentication)
+        User user = authService.createUser(
                 "authtest@example.com",
                 "StrongPassword123!",
-                "Auth Test User",
-                "Auth",
-                "User"
+                "Auth Test User"
         );
         
-        assertTrue(registerResult.isSuccess(), "User registration should succeed");
-        assertNotNull(registerResult.getAccessToken(), "Access token should be generated");
-        assertNotNull(registerResult.getRefreshToken(), "Refresh token should be generated");
-        assertNotNull(registerResult.getUser(), "User should be returned");
-        assertEquals("authtest@example.com", registerResult.getUser().getEmail());
-        
-        // Test user authentication
-        AuthService.AuthResult loginResult = authService.authenticateUser(
-                "authtest@example.com",
-                "StrongPassword123!"
-        );
-        
-        assertTrue(loginResult.isSuccess(), "User authentication should succeed");
-        assertNotNull(loginResult.getAccessToken(), "Access token should be generated");
-        assertNotNull(loginResult.getRefreshToken(), "Refresh token should be generated");
-        
-        // Test token refresh
-        AuthService.AuthResult refreshResult = authService.refreshToken(loginResult.getRefreshToken());
-        assertTrue(refreshResult.isSuccess(), "Token refresh should succeed");
-        assertNotNull(refreshResult.getAccessToken(), "New access token should be generated");
+        assertNotNull(user, "User should be created");
+        assertEquals("authtest@example.com", user.getEmail());
+        assertEquals("Auth Test User", user.getDisplayName());
+        assertTrue(user.isActive(), "User should be active");
+        assertTrue(user.isVerified(), "User should be verified");
         
         // Test profile update
-        AuthService.AuthResult profileResult = authService.updateProfile(
-                registerResult.getUser().getId(),
+        User updatedUser = authService.updateProfile(
+                user.getId(),
                 "Updated Auth User",
                 "Updated",
                 "User",
                 "Updated bio"
         );
         
-        assertTrue(profileResult.isSuccess(), "Profile update should succeed");
-        assertEquals("Updated Auth User", profileResult.getUser().getDisplayName());
+        assertNotNull(updatedUser, "Profile update should succeed");
+        assertEquals("Updated Auth User", updatedUser.getDisplayName());
+        assertEquals("Updated bio", updatedUser.getBio());
         
         // Cleanup
-        userRepository.delete(registerResult.getUser());
+        userRepository.delete(user);
     }
     
     @Test
-    public void testJwtTokenOperations() {
-        // Test token generation
-        String token = jwtTokenProvider.generateTokenFromUsername("testuser@example.com");
-        assertNotNull(token, "Token should be generated");
-        assertTrue(token.contains("."), "Token should be in JWT format");
+    public void testSessionBasedAuthentication() {
+        // Since we're using session-based authentication instead of JWT,
+        // we test the session functionality through the AuthService
         
-        // Test token validation
-        assertTrue(jwtTokenProvider.validateToken(token), "Token should be valid");
+        // Test user creation for authentication
+        User user = authService.createUser(
+                "sessiontest@example.com",
+                "StrongPassword123!",
+                "Session Test User"
+        );
         
-        // Test username extraction
-        String username = jwtTokenProvider.getUsernameFromToken(token);
-        assertEquals("testuser@example.com", username, "Username should be extracted correctly");
+        assertNotNull(user, "User should be created");
+        assertEquals("sessiontest@example.com", user.getEmail());
+        assertTrue(user.isActive(), "User should be active");
         
-        // Test token expiration check
-        assertFalse(jwtTokenProvider.isTokenExpired(token), "Fresh token should not be expired");
+        // Test loading user by username (used by Spring Security)
+        org.springframework.security.core.userdetails.UserDetails userDetails = 
+                authService.loadUserByUsername("sessiontest@example.com");
         
-        // Test refresh token generation
-        String refreshToken = jwtTokenProvider.generateRefreshToken("testuser@example.com");
-        assertNotNull(refreshToken, "Refresh token should be generated");
-        assertTrue(jwtTokenProvider.isRefreshToken(refreshToken), "Should be identified as refresh token");
-        assertFalse(jwtTokenProvider.isRefreshToken(token), "Access token should not be identified as refresh token");
+        assertNotNull(userDetails, "User details should be loaded");
+        assertEquals("sessiontest@example.com", userDetails.getUsername());
+        assertTrue(userDetails.isEnabled(), "User should be enabled");
+        assertTrue(userDetails.isAccountNonExpired(), "Account should not be expired");
         
-        // Test remaining time calculation
-        long remainingTime = jwtTokenProvider.getRemainingTimeToExpire(token);
-        assertTrue(remainingTime > 0, "Fresh token should have remaining time");
+        // Cleanup
+        userRepository.delete(user);
     }
     
     @Test

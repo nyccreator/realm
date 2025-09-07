@@ -1,0 +1,606 @@
+/* ============================================================================
+   REALM PKM - DESIGN TOKENS
+   Fusion of Craft's elegance and Obsidian's power
+   ============================================================================ */
+
+:root {
+  /* ========================================
+     COLOR PALETTE
+     ======================================== */
+  
+  /* Primary Colors - Craft-inspired with graph functionality */
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+  --color-primary-950: #1e1b4b;
+
+  /* Secondary Colors - Purple for relationships */
+  --color-secondary-50: #faf5ff;
+  --color-secondary-100: #f3e8ff;
+  --color-secondary-200: #e9d5ff;
+  --color-secondary-300: #d8b4fe;
+  --color-secondary-400: #c084fc;
+  --color-secondary-500: #a855f7;
+  --color-secondary-600: #9333ea;
+  --color-secondary-700: #7c3aed;
+  --color-secondary-800: #6b21a8;
+  --color-secondary-900: #581c87;
+  --color-secondary-950: #3b0764;
+
+  /* Success Colors - Emerald for connections */
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-success-800: #065f46;
+  --color-success-900: #064e3b;
+
+  /* Warning Colors - Amber for highlights */
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+
+  /* Danger Colors - Red for deletions */
+  --color-danger-50: #fef2f2;
+  --color-danger-100: #fee2e2;
+  --color-danger-200: #fecaca;
+  --color-danger-300: #fca5a5;
+  --color-danger-400: #f87171;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-danger-700: #b91c1c;
+  --color-danger-800: #991b1b;
+  --color-danger-900: #7f1d1d;
+
+  /* Neutral Colors - Craft-inspired grays */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+
+  /* ========================================
+     SEMANTIC COLORS (Light Theme)
+     ======================================== */
+  
+  --bg-primary: var(--color-gray-50);
+  --bg-secondary: #ffffff;
+  --bg-tertiary: var(--color-gray-100);
+  --bg-elevated: #ffffff;
+  --bg-overlay: rgba(255, 255, 255, 0.95);
+  --bg-modal: #ffffff;
+  
+  --text-primary: var(--color-gray-900);
+  --text-secondary: var(--color-gray-600);
+  --text-tertiary: var(--color-gray-500);
+  --text-muted: var(--color-gray-400);
+  --text-inverse: #ffffff;
+  
+  --border-primary: var(--color-gray-200);
+  --border-secondary: var(--color-gray-300);
+  --border-focus: var(--color-primary-500);
+  --border-muted: var(--color-gray-100);
+  
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  /* ========================================
+     TYPOGRAPHY SYSTEM
+     ======================================== */
+  
+  /* Font Families */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, 'Liberation Mono', Menlo, monospace;
+  --font-display: 'Cal Sans', var(--font-sans);
+  
+  /* Font Sizes */
+  --text-xs: 0.75rem;      /* 12px */
+  --text-sm: 0.875rem;     /* 14px */
+  --text-base: 1rem;       /* 16px */
+  --text-lg: 1.125rem;     /* 18px */
+  --text-xl: 1.25rem;      /* 20px */
+  --text-2xl: 1.5rem;      /* 24px */
+  --text-3xl: 1.875rem;    /* 30px */
+  --text-4xl: 2.25rem;     /* 36px */
+  --text-5xl: 3rem;        /* 48px */
+  
+  /* Line Heights */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+  
+  /* Font Weights */
+  --font-thin: 100;
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+
+  /* ========================================
+     SPACING SYSTEM
+     ======================================== */
+  
+  --spacing-px: 1px;
+  --spacing-0: 0;
+  --spacing-0-5: 0.125rem;  /* 2px */
+  --spacing-1: 0.25rem;     /* 4px */
+  --spacing-1-5: 0.375rem;  /* 6px */
+  --spacing-2: 0.5rem;      /* 8px */
+  --spacing-2-5: 0.625rem;  /* 10px */
+  --spacing-3: 0.75rem;     /* 12px */
+  --spacing-3-5: 0.875rem;  /* 14px */
+  --spacing-4: 1rem;        /* 16px */
+  --spacing-5: 1.25rem;     /* 20px */
+  --spacing-6: 1.5rem;      /* 24px */
+  --spacing-7: 1.75rem;     /* 28px */
+  --spacing-8: 2rem;        /* 32px */
+  --spacing-9: 2.25rem;     /* 36px */
+  --spacing-10: 2.5rem;     /* 40px */
+  --spacing-11: 2.75rem;    /* 44px */
+  --spacing-12: 3rem;       /* 48px */
+  --spacing-14: 3.5rem;     /* 56px */
+  --spacing-16: 4rem;       /* 64px */
+  --spacing-20: 5rem;       /* 80px */
+  --spacing-24: 6rem;       /* 96px */
+  --spacing-28: 7rem;       /* 112px */
+  --spacing-32: 8rem;       /* 128px */
+
+  /* ========================================
+     BORDER RADIUS
+     ======================================== */
+  
+  --radius-none: 0;
+  --radius-sm: 0.125rem;    /* 2px */
+  --radius-md: 0.375rem;    /* 6px */
+  --radius-lg: 0.5rem;      /* 8px */
+  --radius-xl: 0.75rem;     /* 12px */
+  --radius-2xl: 1rem;       /* 16px */
+  --radius-3xl: 1.5rem;     /* 24px */
+  --radius-full: 9999px;
+
+  /* ========================================
+     ANIMATION & TRANSITIONS
+     ======================================== */
+  
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+  
+  /* Easing curves */
+  --ease-linear: linear;
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* ========================================
+     Z-INDEX SCALE
+     ======================================== */
+  
+  --z-behind: -1;
+  --z-base: 0;
+  --z-docked: 10;
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+  --z-max: 2147483647;
+
+  /* ========================================
+     LAYOUT BREAKPOINTS
+     ======================================== */
+  
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* ========================================
+     COMPONENT SPECIFIC
+     ======================================== */
+  
+  /* Graph visualization */
+  --graph-node-size: 8px;
+  --graph-edge-width: 1px;
+  --graph-node-selected: var(--color-primary-500);
+  --graph-node-hover: var(--color-secondary-400);
+  --graph-edge-color: var(--color-gray-300);
+  --graph-edge-hover: var(--color-primary-400);
+  
+  /* Editor */
+  --editor-focus-ring: 0 0 0 3px rgb(99 102 241 / 0.1);
+  --editor-selection: rgb(99 102 241 / 0.1);
+  
+  /* Sidebar */
+  --sidebar-width: 280px;
+  --sidebar-width-collapsed: 64px;
+  
+  /* Header */
+  --header-height: 64px;
+  
+  /* Status bar */
+  --status-bar-height: 32px;
+
+  /* ========================================
+     CRAFT-SPECIFIC COLORS
+     ======================================== */
+  
+  /* Craft Background Colors */
+  --craft-background: #f8f9fa;
+  --craft-sidebar: #ffffff;
+  --craft-editor-bg: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 50%, #9333ea 100%);
+  --craft-document-bg: #ffffff;
+  --craft-card-bg: #ffffff;
+  
+  /* Craft Text Colors */
+  --craft-text: #111827;
+  --craft-text-secondary: #6b7280;
+  --craft-text-muted: #9ca3af;
+  --craft-text-inverse: #ffffff;
+  --craft-primary-text: #ffffff;
+  
+  /* Craft Border Colors */
+  --craft-border: #e5e7eb;
+  --craft-border-light: #f3f4f6;
+  
+  /* Craft Interactive Colors */
+  --craft-primary: #6366f1;
+  --craft-primary-hover: #5b6bf1;
+  --craft-hover: #f9fafb;
+  --craft-hover-light: #f3f4f6;
+  --craft-active: #e5e7eb;
+  
+  /* Craft Icon Colors */
+  --craft-icon: #9ca3af;
+  --craft-icon-active: #374151;
+}
+
+/* ========================================
+   DARK THEME OVERRIDES
+   ======================================== */
+
+[data-theme="dark"] {
+  --bg-primary: var(--color-gray-950);
+  --bg-secondary: var(--color-gray-900);
+  --bg-tertiary: var(--color-gray-800);
+  --bg-elevated: var(--color-gray-900);
+  --bg-overlay: rgba(17, 24, 39, 0.95);
+  --bg-modal: var(--color-gray-800);
+  
+  --text-primary: var(--color-gray-100);
+  --text-secondary: var(--color-gray-300);
+  --text-tertiary: var(--color-gray-400);
+  --text-muted: var(--color-gray-500);
+  --text-inverse: var(--color-gray-900);
+  
+  --border-primary: var(--color-gray-700);
+  --border-secondary: var(--color-gray-600);
+  --border-focus: var(--color-primary-400);
+  --border-muted: var(--color-gray-800);
+  
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.25);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+  
+  /* Graph colors for dark theme */
+  --graph-edge-color: var(--color-gray-600);
+  --graph-edge-hover: var(--color-primary-300);
+  --editor-selection: rgb(99 102 241 / 0.2);
+}
+
+/* ========================================
+   SYSTEM FONT LOADING
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
+
+/* ========================================
+   BASE RESET & UTILITIES
+   ======================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  line-height: var(--leading-normal);
+  -webkit-text-size-adjust: 100%;
+  -moz-tab-size: 4;
+  tab-size: 4;
+  font-feature-settings: "kern" 1, "liga" 1;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  font-weight: var(--font-normal);
+  transition: background-color var(--transition-base), color var(--transition-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus styles */
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* Selection styles */
+::selection {
+  background-color: var(--editor-selection);
+}
+
+/* Smooth scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gray-300);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-400);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--color-gray-600);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-500);
+}
+
+/* Utility classes */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.transition-all {
+  transition: all var(--transition-base);
+}
+
+.transition-colors {
+  transition: color var(--transition-base), background-color var(--transition-base), border-color var(--transition-base);
+}
+
+.transition-transform {
+  transition: transform var(--transition-base);
+}
+
+/* Focus ring for editor */
+.focus-ring {
+  transition: box-shadow var(--transition-base);
+}
+
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(99 102 241 / 0.1);
+}
+
+/* ========================================
+   CRAFT-INSPIRED EDITOR STYLES
+   ======================================== */
+
+.ProseMirror {
+  outline: none !important;
+  font-size: 1.125rem;
+  line-height: 1.75;
+  color: var(--text-primary);
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: var(--color-gray-400);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Craft-style typography hierarchy */
+.craft-editor-content .craft-heading {
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.craft-editor-content .craft-heading:first-child {
+  margin-top: 0;
+}
+
+.craft-editor-content h1.craft-heading {
+  font-size: 2.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.craft-editor-content h2.craft-heading {
+  font-size: 1.875rem;
+  margin-top: 3rem;
+  margin-bottom: 1.25rem;
+}
+
+.craft-editor-content h3.craft-heading {
+  font-size: 1.5rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.craft-editor-content .craft-paragraph {
+  margin-bottom: 1.5rem;
+  line-height: 1.75;
+  color: var(--text-primary);
+}
+
+.craft-editor-content .craft-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists */
+.craft-editor-content .craft-bullet-list,
+.craft-editor-content .craft-ordered-list {
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.craft-editor-content .craft-bullet-list li,
+.craft-editor-content .craft-ordered-list li {
+  margin-bottom: 0.5rem;
+  line-height: 1.75;
+  color: var(--text-primary);
+}
+
+.craft-editor-content .craft-bullet-list {
+  list-style-type: disc;
+}
+
+.craft-editor-content .craft-ordered-list {
+  list-style-type: decimal;
+}
+
+/* Blockquotes */
+.craft-editor-content .craft-blockquote {
+  margin: 2rem 0;
+  padding-left: 1.5rem;
+  border-left: 4px solid var(--color-primary-200);
+  background-color: var(--color-gray-50);
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+/* Inline code */
+.craft-editor-content .craft-inline-code {
+  background-color: var(--color-gray-100);
+  color: var(--color-primary-700);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+}
+
+/* Code blocks */
+.craft-editor-content .craft-code-block {
+  background-color: var(--color-gray-900);
+  color: var(--color-gray-100);
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  margin: 2rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+/* Links */
+.craft-editor-content .craft-link {
+  color: var(--color-primary-600);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-primary-200);
+  transition: all var(--transition-fast);
+}
+
+.craft-editor-content .craft-link:hover {
+  color: var(--color-primary-700);
+  border-bottom-color: var(--color-primary-400);
+}
+
+/* Title input */
+.craft-title-input::placeholder {
+  color: var(--color-gray-400);
+}
+
+.craft-title-input:focus::placeholder {
+  opacity: 0.5;
+}
+
+/* Placeholder styles */
+.craft-placeholder::before {
+  color: var(--color-gray-400);
+  font-size: 1.125rem;
+  line-height: 1.75;
+}
+
+/* Tippy theme for bubble menus */
+.tippy-box[data-theme~='light-border'] {
+  background-color: white;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-lg);
+}
+
+.tippy-box[data-theme~='light-border'] .tippy-arrow {
+  color: white;
+}
+
+.tippy-box[data-theme~='light-border'] .tippy-arrow:before {
+  border-color: var(--color-gray-200);
+}

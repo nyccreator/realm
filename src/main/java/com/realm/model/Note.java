@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.neo4j.core.schema.GeneratedValue;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Property;
 import org.springframework.data.neo4j.core.schema.Relationship;
@@ -31,8 +30,8 @@ import java.util.*;
 public class Note {
     
     @Id 
-    @GeneratedValue
-    private Long id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
     
     @Property("title")
     @NotBlank(message = "Note title is required")

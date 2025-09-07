@@ -1,10 +1,10 @@
 // Login Form Component for Section 3.1 - Single-User Authentication
 // Provides email/password login with validation and error handling
 
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import React, {useState} from 'react';
 
 interface LoginFormProps {
+  onLogin: (email: string, password: string) => Promise<void>;
   onSuccess?: () => void;
   onSwitchToRegister?: () => void;
 }
@@ -21,10 +21,10 @@ interface FormErrors {
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({ 
+  onLogin,
   onSuccess, 
   onSwitchToRegister 
 }) => {
-  const { login, loading } = useAuth();
   const [formData, setFormData] = useState<FormData>({
     email: '',
     password: '',
@@ -78,7 +78,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     setErrors({});
 
     try {
-      await login(formData.email, formData.password);
+      await onLogin(formData.email, formData.password);
       onSuccess?.();
     } catch (error) {
       setErrors({
@@ -95,7 +95,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     }
   };
 
-  const isFormDisabled = loading || isSubmitting;
+  const isFormDisabled = isSubmitting;
 
   return (
     <div className="w-full max-w-md mx-auto">

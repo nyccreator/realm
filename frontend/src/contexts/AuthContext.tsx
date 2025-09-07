@@ -1,8 +1,8 @@
 // Authentication Context for Section 3.1 - Single-User Authentication
-// Provides authentication state management and token persistence
+// Updated for Redis session-based authentication (no JWT tokens)
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, AuthContextType } from '../types/auth';
+import React, {createContext, ReactNode, useCallback, useContext, useEffect, useState} from 'react';
+import {AuthContextType, User} from '../types/auth';
 import AuthService from '../services/authService';
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -21,100 +21,83 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const authService = AuthService.getInstance();
 
+  const clearAuthState = useCallback(() => {
+    console.log('Clearing authentication state...');
+    authService.clearAllStoredData();
+    setUser(null);
+    console.log('Authentication state cleared - user should be logged out');
+  }, [authService]);
+
   useEffect(() => {
-    // Check for existing token on app startup
+    // Check for existing session on app startup
     const initializeAuth = async () => {
-      const storedToken = authService.getStoredAccessToken();
       const storedUser = authService.getStoredUser();
       
-      if (storedToken && storedUser) {
+      if (storedUser) {
+        // Check if this is a demo user (skip backend validation)
+        if (storedUser.email === 'demo@realm.dev') {
+          console.log('Demo mode detected, skipping backend validation');
+          setUser(storedUser);
+          setLoading(false);
+          return;
+        }
+        
+        // We have stored user data, validate the session with backend
+        console.log('Validating stored user session with backend...');
         try {
-          // Validate token with the backend
-          const validationResponse = await authService.validateToken(storedToken);
-          
+          const validationResponse = await authService.validateSession();
           if (validationResponse.valid && validationResponse.user) {
-            // Token is valid, set authentication state
-            setToken(storedToken);
+            // Session is valid, set auth state
             setUser(validationResponse.user);
             // Update stored user data in case it changed
             authService.storeUser(validationResponse.user);
+            console.log('Session validation successful');
           } else {
-            // Token is invalid, try to refresh
-            const refreshToken = authService.getStoredRefreshToken();
-            if (refreshToken) {
-              const refreshSuccess = await attemptTokenRefresh(refreshToken);
-              if (!refreshSuccess) {
-                // Refresh failed, clear all data
-                clearAuthState();
-              }
-            } else {
-              // No refresh token, clear all data
-              clearAuthState();
-            }
-          }
-        } catch (error) {
-          console.error('Error validating token:', error);
-          // Try to refresh token on validation error
-          const refreshToken = authService.getStoredRefreshToken();
-          if (refreshToken) {
-            const refreshSuccess = await attemptTokenRefresh(refreshToken);
-            if (!refreshSuccess) {
-              clearAuthState();
-            }
-          } else {
+            // Session is invalid, clear auth state
+            console.log('Session validation failed, clearing auth state');
             clearAuthState();
           }
+        } catch (error) {
+          console.error('Session validation error:', error);
+          // On validation error, clear auth state
+          clearAuthState();
         }
       } else {
-        // No stored token or user, clear any partial data
-        clearAuthState();
+        // No stored user data, try to validate session anyway (in case of page reload)
+        try {
+          const validationResponse = await authService.validateSession();
+          if (validationResponse.valid && validationResponse.user) {
+            // Unexpectedly valid session, restore user data
+            setUser(validationResponse.user);
+            authService.storeUser(validationResponse.user);
+            console.log('Restored session from server validation');
+          } else {
+            // No valid session, ensure clean state
+            clearAuthState();
+          }
+        } catch (error) {
+          // No valid session, ensure clean state
+          clearAuthState();
+        }
       }
       
       setLoading(false);
     };
 
     initializeAuth();
-  }, []);
-
-  const attemptTokenRefresh = async (refreshToken: string): Promise<boolean> => {
-    try {
-      const refreshResponse = await authService.refreshToken({ refreshToken });
-      
-      // Store new tokens and user data
-      authService.storeTokens(refreshResponse.accessToken, refreshResponse.refreshToken);
-      authService.storeUser(refreshResponse.user);
-      
-      // Update state
-      setToken(refreshResponse.accessToken);
-      setUser(refreshResponse.user);
-      
-      return true;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      return false;
-    }
-  };
-
-  const clearAuthState = () => {
-    authService.clearAllStoredData();
-    setToken(null);
-    setUser(null);
-  };
+  }, [authService, clearAuthState]);
 
   const login = async (email: string, password: string): Promise<void> => {
     try {
       const response = await authService.login({ email, password });
       
-      // Store tokens and user data
-      authService.storeTokens(response.accessToken, response.refreshToken);
+      // Store user data locally for UI persistence
       authService.storeUser(response.user);
       
-      // Update state
-      setToken(response.accessToken);
+      // Update state (session cookie set automatically by server)
       setUser(response.user);
     } catch (error) {
       // Re-throw error to be handled by the component
@@ -126,12 +109,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authService.register({ email, password, displayName });
       
-      // Store tokens and user data
-      authService.storeTokens(response.accessToken, response.refreshToken);
+      // Store user data locally for UI persistence
       authService.storeUser(response.user);
       
-      // Update state
-      setToken(response.accessToken);
+      // Update state (session cookie set automatically by server)
       setUser(response.user);
     } catch (error) {
       // Re-throw error to be handled by the component
@@ -139,29 +120,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    // Clear all authentication data
+  const logout = async (): Promise<void> => {
+    try {
+      // Call logout endpoint to destroy session on server
+      await authService.logout();
+    } catch (error) {
+      console.error('Server logout failed:', error);
+      // Continue with client-side cleanup regardless
+    }
+    
+    // Clear client-side authentication data
     clearAuthState();
   };
 
-  const refreshTokenMethod = async (): Promise<boolean> => {
-    const refreshToken = authService.getStoredRefreshToken();
-    if (!refreshToken) {
+  const validateSession = async (): Promise<boolean> => {
+    try {
+      const validationResponse = await authService.validateSession();
+      if (validationResponse.valid && validationResponse.user) {
+        // Update user data if session is valid
+        setUser(validationResponse.user);
+        authService.storeUser(validationResponse.user);
+        return true;
+      } else {
+        // Session invalid, clear state
+        clearAuthState();
+        return false;
+      }
+    } catch (error) {
+      console.error('Session validation failed:', error);
+      clearAuthState();
       return false;
     }
-    
-    return await attemptTokenRefresh(refreshToken);
   };
 
   const contextValue: AuthContextType = {
     user,
-    token,
-    isAuthenticated: !!user && !!token,
+    isAuthenticated: !!user,
     loading,
     login,
     register,
     logout,
-    refreshToken: refreshTokenMethod,
+    validateSession,
   };
 
   return (

@@ -1,20 +1,23 @@
 package com.realm.model;
 
-import org.springframework.data.neo4j.core.schema.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.neo4j.core.schema.Node;
+import org.springframework.data.neo4j.core.schema.Property;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.UUID;
 
 /**
  * User entity representing the single authenticated user in the PKM system.
@@ -31,8 +34,8 @@ import java.util.*;
 public class User implements UserDetails {
     
     @Id 
-    @GeneratedValue
-    private Long id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
     
     @Property("email")
     @Email(message = "Please provide a valid email address")

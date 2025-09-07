@@ -1,0 +1,285 @@
+/* Craft-Inspired Editor Styles */
+
+/* Main editor container */
+.craft-editor-content {
+  font-family: var(--font-sans);
+  line-height: var(--leading-relaxed);
+  color: var(--text-primary);
+  max-width: none;
+}
+
+.craft-editor-content .ProseMirror {
+  outline: none;
+  padding: 0;
+  min-height: 200px;
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+}
+
+/* Title input styling */
+.craft-title-input {
+  font-family: var(--font-sans);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+}
+
+.craft-title-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Placeholder styling */
+.craft-placeholder .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--text-muted);
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+  font-size: var(--text-lg);
+}
+
+/* Craft-Inspired Typography */
+.craft-heading h1,
+.craft-editor-content .ProseMirror h1 {
+  font-size: var(--text-4xl);
+  font-weight: var(--font-extrabold);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+  margin-top: var(--spacing-8);
+  margin-bottom: var(--spacing-4);
+  letter-spacing: -0.025em;
+}
+
+.craft-heading h2,
+.craft-editor-content .ProseMirror h2 {
+  font-size: var(--text-3xl);
+  font-weight: var(--font-bold);
+  line-height: var(--leading-tight);
+  color: var(--text-primary);
+  margin-top: var(--spacing-7);
+  margin-bottom: var(--spacing-3);
+  letter-spacing: -0.025em;
+}
+
+.craft-heading h3,
+.craft-editor-content .ProseMirror h3 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-snug);
+  color: var(--text-primary);
+  margin-top: var(--spacing-6);
+  margin-bottom: var(--spacing-2);
+}
+
+.craft-paragraph,
+.craft-editor-content .ProseMirror p {
+  margin-bottom: var(--spacing-4);
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--text-primary);
+}
+
+/* Focus States */
+.craft-editor-content .ProseMirror:focus {
+  outline: none;
+}
+
+.craft-editor-content .ProseMirror *:focus {
+  outline: none;
+}
+
+/* Craft-Inspired Link Styles */
+.craft-link,
+.craft-editor-content .ProseMirror a {
+  color: var(--color-primary-600);
+  text-decoration: underline;
+  text-decoration-color: var(--color-primary-300);
+  text-underline-offset: 3px;
+  transition: var(--transition-fast);
+}
+
+.craft-link:hover,
+.craft-editor-content .ProseMirror a:hover {
+  color: var(--color-primary-700);
+  text-decoration-color: var(--color-primary-600);
+}
+
+/* Craft-Inspired List Styles */
+.craft-bullet-list,
+.craft-editor-content .ProseMirror ul {
+  list-style: none;
+  margin: var(--spacing-4) 0;
+  padding-left: var(--spacing-6);
+}
+
+.craft-bullet-list li,
+.craft-editor-content .ProseMirror ul li {
+  position: relative;
+  margin-bottom: var(--spacing-2);
+  padding-left: var(--spacing-4);
+}
+
+.craft-bullet-list li:before,
+.craft-editor-content .ProseMirror ul li:before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary-500);
+  font-weight: var(--font-bold);
+  font-size: 1.2em;
+}
+
+.craft-ordered-list,
+.craft-editor-content .ProseMirror ol {
+  counter-reset: list-counter;
+  margin: var(--spacing-4) 0;
+  padding-left: var(--spacing-6);
+}
+
+.craft-ordered-list li,
+.craft-editor-content .ProseMirror ol li {
+  counter-increment: list-counter;
+  position: relative;
+  margin-bottom: var(--spacing-2);
+  padding-left: var(--spacing-6);
+}
+
+.craft-ordered-list li:before,
+.craft-editor-content .ProseMirror ol li:before {
+  content: counter(list-counter) '.';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary-500);
+  font-weight: var(--font-semibold);
+  min-width: var(--spacing-6);
+}
+
+/* Craft-Inspired Blockquote Styles */
+.craft-blockquote,
+.craft-editor-content .ProseMirror blockquote {
+  border-left: 4px solid var(--color-primary-500);
+  background: linear-gradient(90deg, var(--color-primary-50) 0%, transparent 100%);
+  margin: var(--spacing-6) 0;
+  padding: var(--spacing-4) var(--spacing-6);
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  font-style: italic;
+  position: relative;
+}
+
+.craft-blockquote:before,
+.craft-editor-content .ProseMirror blockquote:before {
+  content: '"';
+  position: absolute;
+  top: 0;
+  left: var(--spacing-4);
+  font-size: var(--text-5xl);
+  color: var(--color-primary-200);
+  line-height: var(--leading-none);
+  transform: translateY(-0.5rem);
+  font-family: Georgia, serif;
+}
+
+.craft-blockquote p,
+.craft-editor-content .ProseMirror blockquote p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+/* Craft-Inspired Code Styles */
+.craft-inline-code,
+.craft-editor-content .ProseMirror code {
+  background: var(--color-gray-100);
+  color: var(--color-secondary-700);
+  padding: var(--spacing-0-5) var(--spacing-1-5);
+  border-radius: var(--radius-md);
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  border: 1px solid var(--border-primary);
+}
+
+.craft-code-block,
+.craft-editor-content .ProseMirror pre {
+  background: var(--color-gray-900);
+  color: var(--color-gray-100);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-6);
+  margin: var(--spacing-6) 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  overflow-x: auto;
+  border: 1px solid var(--color-gray-700);
+}
+
+.craft-code-block code,
+.craft-editor-content .ProseMirror pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+/* Craft-Inspired Selection Styles */
+.craft-editor-content .ProseMirror ::selection {
+  background: var(--editor-selection);
+}
+
+.craft-editor-content .ProseMirror::-moz-selection {
+  background: var(--editor-selection);
+}
+
+/* Focus Ring */
+.craft-editor-content .ProseMirror:focus-within {
+  box-shadow: var(--editor-focus-ring);
+  border-radius: var(--radius-lg);
+  transition: var(--transition-fast);
+}
+
+/* Dark Mode Support */
+[data-theme="dark"] .craft-editor-content {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .craft-inline-code,
+[data-theme="dark"] .craft-editor-content .ProseMirror code {
+  background: var(--color-gray-700);
+  color: var(--color-secondary-300);
+  border-color: var(--color-gray-600);
+}
+
+[data-theme="dark"] .craft-blockquote,
+[data-theme="dark"] .craft-editor-content .ProseMirror blockquote {
+  background: linear-gradient(90deg, var(--color-primary-900) 0%, transparent 100%);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .craft-editor-content .ProseMirror {
+    padding: 0;
+  }
+  
+  .craft-title-input {
+    font-size: var(--text-2xl);
+  }
+  
+  .craft-editor-content .ProseMirror h1 {
+    font-size: var(--text-3xl);
+  }
+  
+  .craft-editor-content .ProseMirror h2 {
+    font-size: var(--text-2xl);
+  }
+  
+  .craft-editor-content .ProseMirror h3 {
+    font-size: var(--text-xl);
+  }
+  
+  .craft-paragraph,
+  .craft-editor-content .ProseMirror p {
+    font-size: var(--text-base);
+  }
+}

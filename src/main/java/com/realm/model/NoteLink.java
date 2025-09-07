@@ -11,6 +11,7 @@ import org.springframework.data.neo4j.core.schema.RelationshipProperties;
 import org.springframework.data.neo4j.core.schema.TargetNode;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * NoteLink represents the relationship properties between Notes in the knowledge graph.
@@ -31,7 +32,8 @@ public class NoteLink {
     
     @Id 
     @GeneratedValue
-    private Long id;
+    @Builder.Default
+    private String id = UUID.randomUUID().toString();
     
     @Property("type")
     @Builder.Default
@@ -72,6 +74,9 @@ public class NoteLink {
     // The target note this relationship points to
     @TargetNode
     private Note targetNote;
+    
+    // The user who created this relationship (for access control and auditing)
+    private User createdBy;
     
     // Relationship type constants for better type safety
     public static final String TYPE_REFERENCES = "REFERENCES";

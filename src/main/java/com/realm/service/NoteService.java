@@ -51,7 +51,7 @@ public class NoteService {
     /**
      * Find all notes for a specific user
      */
-    public List<Note> findAllByUser(Long userId) {
+    public List<Note> findAllByUser(String userId) {
         log.debug("Finding all notes for user: {}", userId);
         return noteRepository.findByCreatedByUserId(userId);
     }
@@ -59,7 +59,7 @@ public class NoteService {
     /**
      * Find a specific note by ID and verify user access
      */
-    public Note findByIdAndUser(Long noteId, Long userId) {
+    public Note findByIdAndUser(String noteId, String userId) {
         log.debug("Finding note {} for user: {}", noteId, userId);
         
         Optional<Note> noteOpt = noteRepository.findById(noteId);
@@ -103,7 +103,7 @@ public class NoteService {
     /**
      * Update an existing note
      */
-    public Note updateNote(Long noteId, String title, String content, List<String> tags, Long userId) {
+    public Note updateNote(String noteId, String title, String content, List<String> tags, String userId) {
         log.debug("Updating note {} for user: {}", noteId, userId);
         
         Note note = findByIdAndUser(noteId, userId);
@@ -133,7 +133,7 @@ public class NoteService {
     /**
      * Delete a note
      */
-    public void deleteNote(Long noteId, Long userId) {
+    public void deleteNote(String noteId, String userId) {
         log.debug("Deleting note {} for user: {}", noteId, userId);
         
         Note note = findByIdAndUser(noteId, userId);
@@ -149,7 +149,7 @@ public class NoteService {
     /**
      * Link two notes together
      */
-    public Note linkNotes(Long sourceNoteId, Long targetNoteId, String type, String context, Long userId) {
+    public Note linkNotes(String sourceNoteId, String targetNoteId, String type, String context, String userId) {
         log.debug("Linking notes {} -> {} with type '{}' for user: {}", 
                  sourceNoteId, targetNoteId, type, userId);
         
@@ -194,7 +194,7 @@ public class NoteService {
     /**
      * Remove a link between notes
      */
-    public void removeLink(Long sourceNoteId, Long linkId, Long userId) {
+    public void removeLink(String sourceNoteId, String linkId, String userId) {
         log.debug("Removing link {} from note {} for user: {}", linkId, sourceNoteId, userId);
         
         Note sourceNote = findByIdAndUser(sourceNoteId, userId);
@@ -215,7 +215,7 @@ public class NoteService {
     /**
      * Find notes linked by a specific note (outgoing links)
      */
-    public List<Note> findLinkedNotes(Long noteId, Long userId) {
+    public List<Note> findLinkedNotes(String noteId, String userId) {
         log.debug("Finding linked notes for note {} and user: {}", noteId, userId);
         
         // Verify user has access to the note
@@ -227,7 +227,7 @@ public class NoteService {
     /**
      * Find notes that link to a specific note (backlinks)
      */
-    public List<Note> findBacklinks(Long noteId, Long userId) {
+    public List<Note> findBacklinks(String noteId, String userId) {
         log.debug("Finding backlinks for note {} and user: {}", noteId, userId);
         
         // Verify user has access to the note
@@ -239,7 +239,7 @@ public class NoteService {
     /**
      * Find related notes using graph traversal
      */
-    public List<Note> findRelatedNotes(Long noteId, Long userId, int depth, int limit) {
+    public List<Note> findRelatedNotes(String noteId, String userId, int depth, int limit) {
         log.debug("Finding related notes for note {} (depth={}, limit={}) for user: {}", 
                  noteId, depth, limit, userId);
         
@@ -264,7 +264,7 @@ public class NoteService {
     /**
      * Search notes by content using full-text search
      */
-    public List<Note> searchNotes(String query, Long userId) {
+    public List<Note> searchNotes(String query, String userId) {
         log.debug("Searching notes for query '{}' for user: {}", query, userId);
         
         if (query == null || query.trim().isEmpty()) {
@@ -282,7 +282,7 @@ public class NoteService {
     /**
      * Find notes by tag
      */
-    public List<Note> findByTag(String tag, Long userId) {
+    public List<Note> findByTag(String tag, String userId) {
         log.debug("Finding notes with tag '{}' for user: {}", tag, userId);
         
         if (tag == null || tag.trim().isEmpty()) {
@@ -295,7 +295,7 @@ public class NoteService {
     /**
      * Find notes by status
      */
-    public List<Note> findByStatus(String status, Long userId) {
+    public List<Note> findByStatus(String status, String userId) {
         log.debug("Finding notes with status '{}' for user: {}", status, userId);
         
         if (!List.of("DRAFT", "PUBLISHED", "ARCHIVED").contains(status)) {
@@ -308,7 +308,7 @@ public class NoteService {
     /**
      * Find favorite notes
      */
-    public List<Note> findFavoriteNotes(Long userId) {
+    public List<Note> findFavoriteNotes(String userId) {
         log.debug("Finding favorite notes for user: {}", userId);
         return noteRepository.findFavoritesByUserId(userId);
     }
@@ -316,7 +316,7 @@ public class NoteService {
     /**
      * Find recently updated notes
      */
-    public List<Note> findRecentlyUpdatedNotes(Long userId, int days) {
+    public List<Note> findRecentlyUpdatedNotes(String userId, int days) {
         log.debug("Finding recently updated notes (last {} days) for user: {}", days, userId);
         
         if (days < 1 || days > 365) {
@@ -334,7 +334,7 @@ public class NoteService {
     /**
      * Toggle favorite status of a note
      */
-    public Note toggleFavorite(Long noteId, Long userId) {
+    public Note toggleFavorite(String noteId, String userId) {
         log.debug("Toggling favorite status for note {} and user: {}", noteId, userId);
         
         Note note = findByIdAndUser(noteId, userId);
@@ -350,7 +350,7 @@ public class NoteService {
     /**
      * Update note status
      */
-    public Note updateStatus(Long noteId, String status, Long userId) {
+    public Note updateStatus(String noteId, String status, String userId) {
         log.debug("Updating status of note {} to '{}' for user: {}", noteId, status, userId);
         
         Note note = findByIdAndUser(noteId, userId);
@@ -365,7 +365,7 @@ public class NoteService {
     /**
      * Get note statistics for a user
      */
-    public NoteRepository.NoteStatistics getNoteStatistics(Long userId) {
+    public NoteRepository.NoteStatistics getNoteStatistics(String userId) {
         log.debug("Getting note statistics for user: {}", userId);
         return noteRepository.getNoteStatistics(userId);
     }
@@ -388,7 +388,7 @@ public class NoteService {
         }
     }
     
-    private boolean isNoteAccessibleToUser(Note note, Long userId) {
+    private boolean isNoteAccessibleToUser(Note note, String userId) {
         // For now, users can only access their own notes
         // This will be extended in future sections for multi-user sharing
         return note.getCreatedBy() != null && 

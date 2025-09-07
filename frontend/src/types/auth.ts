@@ -1,5 +1,5 @@
 // Authentication types for Section 3.1 - Single-User Authentication
-// These types match the backend API responses from AuthController
+// Updated for Redis session-based authentication (no JWT tokens)
 
 export interface User {
   id: string;
@@ -22,25 +22,21 @@ export interface LoginRequest {
 
 export interface AuthResponse {
   message: string;
-  token: string; // For backward compatibility
-  accessToken: string;
-  refreshToken: string;
   user: User;
+  sessionId?: string; // Optional session metadata
 }
 
-export interface ValidationResponse {
+export interface SessionValidationResponse {
   valid: boolean;
   user?: User;
-  tokenExpiry?: string;
+  sessionExpiry?: string;
   remainingTime?: number;
   error?: string;
   message?: string;
   status?: number;
 }
 
-export interface RefreshTokenRequest {
-  refreshToken: string;
-}
+// Removed RefreshTokenRequest - not needed for session-based auth
 
 export interface ErrorResponse {
   error: string;
@@ -52,11 +48,10 @@ export interface ErrorResponse {
 
 export interface AuthContextType {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, displayName: string) => Promise<void>;
-  logout: () => void;
-  refreshToken: () => Promise<boolean>;
+  logout: () => Promise<void>;
+  validateSession: () => Promise<boolean>;
 }

@@ -20,13 +20,11 @@ class GraphService {
   }
 
   /**
-   * Get authorization headers for API requests
+   * Get headers for API requests (session-based auth)
    */
-  private getAuthHeaders(): Record<string, string> {
-    const token = this.authService.getStoredAccessToken();
+  private getHeaders(): Record<string, string> {
     return {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` })
+      'Content-Type': 'application/json'
     };
   }
 
@@ -60,7 +58,8 @@ class GraphService {
 
     const response = await fetch(`${GRAPH_BASE_URL}/data?${queryParams}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<GraphData>(response);
@@ -88,7 +87,8 @@ class GraphService {
 
     const response = await fetch(`${GRAPH_BASE_URL}/subgraph/${nodeId}?${queryParams}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<GraphData>(response);
@@ -103,7 +103,8 @@ class GraphService {
 
     const response = await fetch(`${GRAPH_BASE_URL}/search?${queryParams}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<GraphNode[]>(response);
@@ -115,7 +116,8 @@ class GraphService {
   async getGraphStats(): Promise<GraphStats> {
     const response = await fetch(`${GRAPH_BASE_URL}/stats`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<GraphStats>(response);
@@ -142,7 +144,8 @@ class GraphService {
 
     const response = await fetch(`${GRAPH_BASE_URL}/search/advanced?${queryParams}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<GraphSearchResult>(response);
@@ -157,7 +160,8 @@ class GraphService {
 
     const response = await fetch(`${GRAPH_BASE_URL}/neighbors/${nodeId}?${queryParams}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<GraphData>(response);
@@ -173,7 +177,8 @@ class GraphService {
   }> {
     const response = await fetch(`${GRAPH_BASE_URL}/path/${sourceNodeId}/${targetNodeId}`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<{
@@ -193,7 +198,8 @@ class GraphService {
   }> {
     const response = await fetch(`${GRAPH_BASE_URL}/metrics/centrality`, {
       method: 'GET',
-      headers: this.getAuthHeaders(),
+      headers: this.getHeaders(),
+      credentials: 'include', // Include session cookies
     });
 
     return this.handleResponse<{
